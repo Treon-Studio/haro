@@ -1,0 +1,21 @@
+llm:
+  default: "meta-llama/llama-3.1-8b-instruct:free"
+  fallback: "google/gemma-2-9b-it:free"
+  smart_home: "meta-llama/llama-3.1-8b-instruct:free"
+  max_tokens: 300
+  temperature: 0.7
+
+stt:
+  language: "id"
+  provider: "minimax"
+
+tts:
+  provider: "minimax"
+  voice_id: "Indonesian_Female"
+  model: "speech-01-turbo"
+
+wake_word:
+  model: "hey_mycroft"
+  threshold: 0.5
+  silence_chunks: 12
+  max_record_seconds: 10

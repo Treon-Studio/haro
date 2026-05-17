@@ -1,0 +1,23 @@
+# Wake word
+openwakeword==0.6.0
+pyaudio==0.2.14
+numpy==1.26.4
+sounddevice==0.4.7
+
+# Backend
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+websockets==13.0
+python-multipart==0.0.9
+httpx==0.27.0
+aiofiles==24.1.0
+python-dotenv==1.0.1
+pyyaml==6.0.2
+
+# Audio processing
+librosa==0.10.2
+
+# Agent integrations
+google-auth==2.35.0
+google-auth-oauthlib==1.2.1
+google-api-python-client==2.149.0

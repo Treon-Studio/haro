@@ -1,0 +1,53 @@
+name: Discord Dev Notification
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    types: [opened, reopened]
+
+jobs:
+  notify-discord:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "message=$(git log -1 --pretty=format:'%s')" >> $GITHUB_OUTPUT
+          echo "author=$(git log -1 --pretty=format:'%an')" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Set emoji and title
+        id: status
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "emoji=🔔" >> $GITHUB_OUTPUT
+            echo "title=PR: ${{ github.event.pull_request.title }}" >> $GITHUB_OUTPUT
+            echo "description=[${{ github.event.pull_request.user.login }} opened PR](${{ github.event.pull_request.html_url }})" >> $GITHUB_OUTPUT
+            echo "color=3447003" >> $GITHUB_OUTPUT
+          else
+            echo "emoji=🚀" >> $GITHUB_OUTPUT
+            echo "title=${{ steps.commit.outputs.author }} pushed to develop" >> $GITHUB_OUTPUT
+            echo "description=${{ steps.commit.outputs.message }}" >> $GITHUB_OUTPUT
+            echo "color=3066993" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Discord notification
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{
+            \"embeds\": [{
+              \"author\": {
+                \"name\": \"Assistant Hub Dev Update\"
+              },
+              \"title\": \"${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.title }}\",
+              \"description\": \"${{ steps.status.outputs.description }}\",
+              \"color\": ${{ steps.status.outputs.color }},
+              \"footer\": {
+                \"text\": \"${{ steps.commit.outputs.short_sha }} • $(date +'%B %d, %Y at %I:%M %p')\"
+              }
+            }]
+          }" \
+          ${{ secrets.DISCORD_WEBHOOK_URL }}

@@ -1,0 +1,10 @@
+agents:
+  smart_home:
+    enabled: true
+    keywords: [lampu, ac, kipas, tv, listrik, matikan, nyalakan]
+  calendar:
+    enabled: false
+    keywords: [jadwal, kalender, meeting, pengingat, besok]
+  general:
+    enabled: true
+    default: true

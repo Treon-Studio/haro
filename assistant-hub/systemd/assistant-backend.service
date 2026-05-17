@@ -1,0 +1,12 @@
+[Unit]
+Description=Assistant Hub Backend
+After=network.target
+
+[Service]
+WorkingDirectory=/home/user/assistant-hub/backend
+ExecStart=/home/user/assistant-hub/venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000
+Restart=always
+User=user
+
+[Install]
+WantedBy=multi-user.target

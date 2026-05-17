@@ -1,0 +1,130 @@
+name: Build & Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'wake_word_service/**'
+      - 'webapp/**'
+      - '.github/workflows/ci.yml'
+
+jobs:
+  test-backend:
+    name: Test Backend (FastAPI)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Lint with ruff
+        run: |
+          pip install ruff
+          ruff check .
+
+      - name: Type check with mypy
+        run: |
+          pip install mypy
+          mypy .
+
+  test-wakeword:
+    name: Test Wake Word Service
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: wake_word_service
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r ../requirements.txt
+
+      - name: Test audio stream imports
+        run: |
+          source venv/bin/activate
+          python -c "from audio_stream import mic_stream, SAMPLE_RATE, CHUNK_SIZE; print('OK')"
+
+      - name: Test detector imports
+        run: |
+          source venv/bin/activate
+          python -c "from detector import WakeWordDetector; print('OK')"
+
+  test-webapp:
+    name: Build Webapp (React + Vite)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webapp
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Type check
+        run: pnpm run typecheck 2>/dev/null || pnpm run compile 2>/dev/null || echo "No typecheck script"
+
+      - name: Build
+        run: pnpm run build
+
+  notify-discord:
+    name: Discord Notification
+    needs: [test-backend, test-wakeword, test-webapp]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Send Discord Notification
+        run: |
+          curl -H "Content-Type: application/json" \
+          -X POST \
+          -d "{
+            \"embeds\": [{
+              \"author\": {
+                \"name\": \"Assistant Hub CI\"
+              },
+              \"title\": \"✅ Build ${{ needs.test-backend.result == 'success' && 'Passed' || 'Failed' }}\",
+              \"description\": \"Commit: ${{ github.event.head_commit.message }}\",
+              \"color\": ${{ needs.test-backend.result == 'success' && '3447003' || '15158332' }},
+              \"footer\": { \"text\": \"${{ github.sha }} • $(date)\" }
+            }]
+          }" \
+          ${{ secrets.DISCORD_WEBHOOK_URL }}

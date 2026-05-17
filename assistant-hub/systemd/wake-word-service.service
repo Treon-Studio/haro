@@ -1,0 +1,12 @@
+[Unit]
+Description=Assistant Hub Wake Word Service
+After=network.target
+
+[Service]
+WorkingDirectory=/home/user/assistant-hub/wake_word_service
+ExecStart=/home/user/assistant-hub/venv/bin/python main.py
+Restart=always
+User=user
+
+[Install]
+WantedBy=multi-user.target

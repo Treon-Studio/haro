@@ -1,0 +1,109 @@
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.15; }
+  50% { transform: scale(1.05); opacity: 0.35; }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: #0a0a0c;
+  color: #fff;
+  font-family: system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  user-select: none;
+}
+
+.hub {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 24px 20px;
+}
+
+.top-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.clock { font-size: 42px; font-weight: 200; letter-spacing: -1px; }
+.date { font-size: 13px; color: rgba(255,255,255,0.4); margin-top: 4px; }
+
+.pills { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.pill {
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.6);
+}
+.pill-green { background: rgba(29,158,117,0.2); color: #5DCAA5; }
+.pill-red { background: rgba(226,75,74,0.2); color: #F09595; }
+.pill-blue { background: rgba(55,138,221,0.2); color: #85B7EB; }
+
+.center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+
+.state-label { font-size: 14px; color: rgba(255,255,255,0.4); letter-spacing: 0.5px; }
+
+.bubble-area {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 400px;
+  width: 100%;
+}
+
+.bubble {
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.user-bubble {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.6);
+  align-self: flex-end;
+  border-radius: 16px 16px 4px 16px;
+}
+.assistant-bubble {
+  background: rgba(55,138,221,0.15);
+  color: rgba(255,255,255,0.9);
+  align-self: flex-start;
+  border-radius: 16px 16px 16px 4px;
+}
+
+.agent-strip {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.agent-chip {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 0.5px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+.agent-chip:active { background: rgba(255,255,255,0.14); }
+
