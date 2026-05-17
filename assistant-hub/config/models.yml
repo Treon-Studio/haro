@@ -8,11 +8,13 @@ llm:
 stt:
   language: "id"
   provider: "minimax"
+  model: "speech-2.6"
 
 tts:
   provider: "minimax"
-  voice_id: "Indonesian_Female"
-  model: "speech-01-turbo"
+  voice_id: "Calm_Woman"
+  model: "speech-2.6-turbo"
+  endpoint: "https://api.minimax.io/v1/t2a_v2"
 
 wake_word:
   model: "hey_mycroft"

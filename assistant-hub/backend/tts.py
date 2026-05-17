@@ -1,21 +1,35 @@
 import httpx
+import json
 import os
 from typing import AsyncGenerator
 
 MINIMAX_API_KEY = os.getenv("MINIMAX_API_KEY")
-TTS_URL = "https://api.minimaxi.com/v1/t2a_v2"
+MINIMAX_GROUP_ID = os.getenv("MINIMAX_GROUP_ID")
+
+TTS_URL = f"https://api.minimax.io/v1/t2a_v2?GroupId={MINIMAX_GROUP_ID}"
+
+HEADERS = {
+    "Authorization": f"Bearer {MINIMAX_API_KEY}",
+    "Content-Type": "application/json",
+}
+
+DEFAULT_VOICE = "Calm_Woman"
 
 
-async def synthesize_stream(text: str, voice_id: str = "Chinese (Mandarin)_Nannan-Ziqiao") -> AsyncGenerator[bytes, None]:
+async def synthesize_stream(text: str, voice_id: str = DEFAULT_VOICE) -> AsyncGenerator[bytes, None]:
     payload = {
-        "model": "speech-2.8-turbo",
+        "model": "speech-2.6-turbo",
         "text": text,
         "stream": True,
+        "stream_options": {
+            "exclude_aggregated_audio": True,
+        },
         "voice_setting": {
             "voice_id": voice_id,
             "speed": 1.0,
             "vol": 1.0,
             "pitch": 0,
+            "emotion": "neutral",
         },
         "audio_setting": {
             "sample_rate": 32000,
@@ -23,33 +37,29 @@ async def synthesize_stream(text: str, voice_id: str = "Chinese (Mandarin)_Nanna
             "format": "mp3",
         },
     }
-    headers = {
-        "Authorization": f"Bearer {MINIMAX_API_KEY}",
-        "Content-Type": "application/json",
-    }
 
     async with httpx.AsyncClient(timeout=60) as client:
-        async with client.stream("POST", TTS_URL, json=payload, headers=headers) as resp:
+        async with client.stream("POST", TTS_URL, json=payload, headers=HEADERS) as resp:
             resp.raise_for_status()
             async for line in resp.aiter_lines():
-                if line.startswith("data: "):
-                    chunk_str = line[6:]
-                    if chunk_str == "[DONE]":
+                if not line.startswith("data:"):
+                    continue
+                raw = line[5:].strip()
+                if not raw or raw == "[DONE]":
+                    continue
+                try:
+                    chunk_data = json.loads(raw)
+                    hex_audio = chunk_data.get("data", {}).get("audio", "")
+                    status = chunk_data.get("data", {}).get("status")
+                    if hex_audio:
+                        yield bytes.fromhex(hex_audio)
+                    if status == 2:
                         break
-                    try:
-                        import json
-                        chunk = json.loads(chunk_str)
-                        audio_hex = chunk.get("data", {}).get("audio")
-                        if audio_hex:
-                            yield bytes.fromhex(audio_hex)
-                        status = chunk.get("data", {}).get("status")
-                        if status == 2:
-                            break
-                    except Exception:
-                        continue
+                except Exception:
+                    continue
 
 
-async def synthesize_full(text: str, voice_id: str = "Chinese (Mandarin)_Nannan-Ziqiao") -> bytes:
+async def synthesize_full(text: str, voice_id: str = DEFAULT_VOICE) -> bytes:
     chunks = []
     async for chunk in synthesize_stream(text, voice_id):
         chunks.append(chunk)
