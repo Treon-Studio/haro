@@ -27,7 +27,7 @@ export const PROVIDERS: Record<string, ProviderConfig> = {
     supportsTools: true,
     headers: {
       'HTTP-Referer': 'https://tenang-web.developerredant.workers.dev',
-      'X-Title': 'Tenang AI',
+      'X-Title': 'Haro',
     },
   },
   deepseek: {

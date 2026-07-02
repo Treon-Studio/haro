@@ -866,7 +866,7 @@ export function CompanyManagement() {
                       <div className="space-y-1">
                         <div className="text-xs uppercase tracking-wider font-extrabold text-brand-primary">Paket Aktif Anda</div>
                         <div className="text-lg font-bold text-text-primary flex items-center gap-1">
-                          Tenang B2B Business Pro
+                          Haro Business Pro
                           <Badge className="bg-brand-primary text-white hover:bg-brand-secondary border-none">Pro</Badge>
                         </div>
                         <div className="text-xs text-text-secondary">Aktif hingga 24 Juni 2027 (Penagihan Tahunan)</div>

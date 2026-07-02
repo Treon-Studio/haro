@@ -1,5 +1,5 @@
 -- ============================================================
--- SEED ACCOUNTS — Tenang AI Demo
+-- SEED ACCOUNTS — Haro Demo
 -- IDEMPOTENT: Safe to run multiple times.
 -- Jalankan di Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/ospagtyymbrsogmvkayv/sql/new

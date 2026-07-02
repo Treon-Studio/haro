@@ -112,7 +112,7 @@ export default function SignUp() {
             <h1 className="font-serif text-4xl font-medium">Registrasi Berhasil!</h1>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Kami telah mengirimkan tautan verifikasi email ke <strong>{email}</strong>. 
-              {companyName ? ` Silakan verifikasi email Anda untuk bergabung dengan ${companyName} di Tenang.` : " Silakan verifikasi email Anda untuk mulai berkonsultasi."}
+              {companyName ? ` Silakan verifikasi email Anda untuk bergabung dengan ${companyName} di Haro.` : " Silakan verifikasi email Anda untuk mulai berkonsultasi."}
             </p>
           </div>
           <a
@@ -141,7 +141,7 @@ export default function SignUp() {
             <h1 className="font-serif text-4xl font-medium">Get started</h1>
             {companyName ? (
               <p className="text-muted-foreground text-sm">
-                Selamat bergabung! Anda diundang oleh <strong className="text-brand-primary font-bold">{companyName}</strong> ke Tenang.
+                Selamat bergabung! Anda diundang oleh <strong className="text-brand-primary font-bold">{companyName}</strong> ke Haro.
               </p>
             ) : (
               <p className="text-muted-foreground text-sm">Create your account to get started</p>

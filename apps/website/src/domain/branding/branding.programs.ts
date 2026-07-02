@@ -23,8 +23,8 @@ export type BrandingProgramError =
 const DEFAULT_BRANDING = (companyId: string): TBranding => ({
   companyId,
   logoUrl: null,
-  primaryColor: "#9B5B3E", // Tenang's earthy ochre hex equivalent
-  welcomeMessage: "Selamat datang di Tenang — ruang aman kesehatan mental Anda.",
+  primaryColor: "#9B5B3E", // Haro's earthy ochre hex equivalent
+  welcomeMessage: "Selamat datang di Haro — ruang aman kesehatan mental Anda.",
   defaultLanguage: "id",
   notificationSettings: {},
   updatedAt: new Date().toISOString(),

@@ -12,7 +12,7 @@ export interface Memory {
 const INITIAL_MEMORIES: Memory[] = [
   { id: '1', key: 'Preferred language', value: 'Indonesian', tokens: 8, updatedAt: new Date('2026-06-18') },
   { id: '2', key: 'Response style', value: 'Concise and direct', tokens: 12, updatedAt: new Date('2026-06-17') },
-  { id: '3', key: 'Current project', value: 'TenangAI — LibreChat parity UI', tokens: 20, updatedAt: new Date('2026-06-16') },
+  { id: '3', key: 'Current project', value: 'Haro — LibreChat parity UI', tokens: 20, updatedAt: new Date('2026-06-16') },
   { id: '4', key: 'Code review preference', value: 'Always explain why, not just what', tokens: 22, updatedAt: new Date('2026-06-15') },
   { id: '5', key: 'Time zone', value: 'Asia/Jakarta (UTC+7)', tokens: 14, updatedAt: new Date('2026-06-14') },
 ];

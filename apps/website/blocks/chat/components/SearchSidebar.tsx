@@ -10,7 +10,7 @@ interface SearchResult {
 
 const MOCK_RESULTS: SearchResult[] = [
   { id: '1', title: 'Code review session', snippet: 'Here is my review of the authentication module...' },
-  { id: '2', title: 'Tenang architecture', snippet: 'The system uses Astro 5 with React islands...' },
+  { id: '2', title: 'Haro architecture', snippet: 'The system uses Astro 5 with React islands...' },
   { id: '3', title: 'Deployment setup', snippet: 'Configure wrangler.jsonc with the correct KV namespace...' },
 ];
 

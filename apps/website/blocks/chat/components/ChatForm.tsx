@@ -26,7 +26,7 @@ export default function ChatForm({
   isStreaming,
   webSearch = false,
   onWebSearchChange,
-  placeholder = 'Message TenangAI',
+  placeholder = 'Message Haro',
   isLanding = false,
   replyingTo,
   onCancelReply,

@@ -1,4 +1,4 @@
-# Tenang AI
+# Haro
 
 Shadcn Blocks with a warm, earthy aesthetic for building super minimalistic elegant websites.
 

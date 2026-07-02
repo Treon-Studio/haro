@@ -31,7 +31,7 @@ export const Logo = ({ className, uniColor = true }: { className?: string; uniCo
     return (
         <span className={cn('inline-flex items-center gap-2 text-foreground', className)}>
             <LogoSvg uniColor={uniColor} />
-            <span className="text-base font-semibold tracking-tight">Tenang AI</span>
+            <span className="text-base font-semibold tracking-tight">Haro</span>
         </span>
     )
 }

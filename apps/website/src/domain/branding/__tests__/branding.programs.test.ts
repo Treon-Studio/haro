@@ -39,7 +39,7 @@ describe("getBrandingProgram", () => {
     expect(result.logo_url).toBe("https://example.com/logo.png")
   })
 
-  it("injects Tenang Earthy Ochre defaults if no corporate branding exists", async () => {
+  it("injects Haro Earthy Ochre defaults if no corporate branding exists", async () => {
     const result = await runWithRepo(getBrandingProgram("company-unconfigured"))
     expect(result.company_id).toBe("company-unconfigured")
     expect(result.primary_color).toBe("#9B5B3E") // Earthy Ochre fallback

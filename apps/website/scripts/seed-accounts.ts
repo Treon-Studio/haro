@@ -3,7 +3,7 @@
 
 const output = `
 -- ============================================================
--- IDEMPOTENT SEED — Tenang AI Demo
+-- IDEMPOTENT SEED — Haro Demo
 -- Safe to run multiple times.
 -- Jalankan di Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/ospagtyymbrsogmvkayv/sql/new

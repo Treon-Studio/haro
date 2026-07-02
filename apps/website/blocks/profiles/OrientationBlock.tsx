@@ -33,7 +33,7 @@ export function OrientationBlock() {
           <ShieldCheckLinear className="h-7 w-7" />
         </div>
         <div className="space-y-1">
-          <CardTitle className="text-3xl font-extrabold tracking-tight">Selamat Datang di TenangAI</CardTitle>
+          <CardTitle className="text-3xl font-extrabold tracking-tight">Selamat Datang di Haro</CardTitle>
           <CardDescription className="text-text-secondary text-sm">
             Sebelum memulai chat pertama Anda, mari pahami batasan dan komitmen privasi kami demi keamanan Anda.
           </CardDescription>
@@ -62,7 +62,7 @@ export function OrientationBlock() {
             </h3>
             <ul className="space-y-2 text-xs text-text-secondary list-disc pl-4 leading-relaxed">
               <li><strong className="text-text-primary">Bukan Terapi Medis</strong>: Bot AI kami tidak dapat memberikan diagnosis psikologis atau resep medis.</li>
-              <li><strong className="text-text-primary">Bukan Saluran Krisis</strong>: Tenang tidak melayani pencegahan bunuh diri atau pertolongan krisis akut darurat.</li>
+              <li><strong className="text-text-primary">Bukan Saluran Krisis</strong>: Haro tidak melayani pencegahan bunuh diri atau pertolongan krisis akut darurat.</li>
             </ul>
           </div>
         </div>

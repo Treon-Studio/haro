@@ -5,7 +5,7 @@ export default function Testimonials() {
             <div className="mx-auto max-w-2xl px-6">
                 <div className="relative pl-6">
                     <div className="bg-primary absolute inset-0 w-0.5 rounded-full"></div>
-                    <p className="text-foreground text-balance text-xl">TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.</p>
+                    <p className="text-foreground text-balance text-xl">Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.</p>
 
                     <div className="mt-8 flex items-center gap-3">
                         <div className="before:border-foreground/10 relative size-10 shrink-0 rounded-full before:absolute before:inset-0 before:rounded-full before:border">

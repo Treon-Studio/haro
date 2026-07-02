@@ -1,5 +1,5 @@
 -- ============================================================
--- FULL MIGRATIONS — Tenang AI
+-- FULL MIGRATIONS — Haro
 -- Jalankan di Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/ospagtyymbrsogmvkayv/sql/new
 -- ============================================================
@@ -189,10 +189,10 @@ create policy "Anyone can view testimonials" on public.testimonials for select u
 create policy "Authenticated users can manage testimonials" on public.testimonials for all using (auth.role() = 'authenticated');
 
 insert into public.testimonials (name, role, quote, avatar, sort_order) values
-('Meschac Irung', 'Frontend Engineer at Acme', 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/47919550?v=4', 1),
-('Theo Balick', 'Founder, CEO - Acme', 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/68236786?v=4', 2),
-('Sarah Johnson', 'DevOps Engineer', 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/12345678?v=4', 3),
-('Aisha Patel', 'Data Scientist', 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/34567890?v=4', 4);
+('Meschac Irung', 'Frontend Engineer at Acme', 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/47919550?v=4', 1),
+('Theo Balick', 'Founder, CEO - Acme', 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/68236786?v=4', 2),
+('Sarah Johnson', 'DevOps Engineer', 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/12345678?v=4', 3),
+('Aisha Patel', 'Data Scientist', 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.', 'https://avatars.githubusercontent.com/u/34567890?v=4', 4);
 
 
 -- 2. Team Members

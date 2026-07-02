@@ -4,25 +4,25 @@ const testimonials = [
         avatar: 'https://avatars.githubusercontent.com/u/47919550?v=4',
         name: 'Meschac Irung',
         role: 'Frontend Engineer at Acme',
-        quote: 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
+        quote: 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
     },
     {
         avatar: 'https://avatars.githubusercontent.com/u/68236786?v=4',
         name: 'Theo Balick',
         role: 'Founder, CEO - Acme',
-        quote: 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
+        quote: 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
     },
     {
         avatar: 'https://avatars.githubusercontent.com/u/12345678?v=4',
         name: 'Sarah Johnson',
         role: 'DevOps Engineer',
-        quote: 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
+        quote: 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
     },
     {
         avatar: 'https://avatars.githubusercontent.com/u/34567890?v=4',
         name: 'Aisha Patel',
         role: 'Data Scientist',
-        quote: 'TenangAI has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
+        quote: 'Haro has been a game-changer for our team. It has helped us to build a modern and scalable web application.',
     },
 ]
 

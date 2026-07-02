@@ -8,7 +8,7 @@ export interface Props {
   title?: string
 }
 
-const { title = 'Super Admin Console - TenangAI' } = Astro.props
+const { title = 'Super Admin Console - Haro' } = Astro.props
 
 const session = Astro.locals.session
 if (!session) {
@@ -45,7 +45,7 @@ const inactiveClass = "text-text-secondary hover:bg-surface-secondary hover:text
           <div class="flex items-center gap-2 px-2 py-3">
             <ShieldCheckLinear className="h-6 w-6 text-brand-primary shrink-0" />
             <div>
-              <span class="font-extrabold text-lg text-text-primary tracking-tight">Tenang Ops</span>
+              <span class="font-extrabold text-lg text-text-primary tracking-tight">Haro Ops</span>
               <span class="block text-[10px] text-brand-primary font-bold uppercase tracking-wider">Super Admin Console</span>
             </div>
           </div>
@@ -108,7 +108,7 @@ const inactiveClass = "text-text-secondary hover:bg-surface-secondary hover:text
         <header class="md:hidden flex items-center justify-between border-b border-border-primary p-4 bg-surface-primary shrink-0">
           <div class="flex items-center gap-2">
             <ShieldCheckLinear className="h-5 w-5 text-brand-primary" />
-            <span class="font-extrabold text-sm text-text-primary tracking-tight">Tenang Ops</span>
+            <span class="font-extrabold text-sm text-text-primary tracking-tight">Haro Ops</span>
           </div>
           <div class="flex items-center gap-1">
             <a href="/super-admin" class="p-2 text-text-secondary hover:text-text-primary"><WidgetLinear className="h-5 w-5" /></a>
