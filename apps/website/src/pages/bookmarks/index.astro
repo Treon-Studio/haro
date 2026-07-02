@@ -1,0 +1,13 @@
+---
+import ChatLayout from '@/layouts/ChatLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<ChatLayout
+	title="Bookmarks - Tenang"
+	description="Your bookmarked conversations."
+>
+	<ChatBlock view="bookmarks" client:load />
+</ChatLayout>

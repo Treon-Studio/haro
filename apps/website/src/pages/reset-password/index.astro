@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ResetPassword from '@/../blocks/reset-password/index';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="Reset Password - Tenang"
+	description="Set a new password for your account."
+>
+	<ResetPassword client:load />
+</BaseLayout>

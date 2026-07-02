@@ -1,0 +1,11 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+---
+
+<BaseLayout
+	title="Skill - Tenang"
+	description="Manage your AI capability."
+>
+	<ChatBlock view="skills" client:load />
+</BaseLayout>

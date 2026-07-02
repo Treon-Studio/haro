@@ -1,0 +1,36 @@
+{
+  "name": "@treonstudio/mcp",
+  "version": "0.1.0",
+  "description": "OKF MCP Server — Knowledge graph navigation via Model Context Protocol, deployed on Cloudflare Workers",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy --minify src/index.ts",
+    "build": "wrangler deploy --dry-run --outdir dist src/index.ts",
+    "start": "wrangler dev src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "sync": "tsx scripts/sync-github.ts",
+    "validate": "tsx scripts/validate-okf.ts"
+  },
+  "dependencies": {
+    "hono": "^4.9.7",
+    "gray-matter": "^4.0.3",
+    "marked": "^15.0.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20230518.0",
+    "@types/node": "20.8.3",
+    "prettier": "3.2.5",
+    "tsx": "^4.7.0",
+    "typescript": "~5.8.3",
+    "vitest": "^3.1.2",
+    "wrangler": "^3.97.0"
+  }
+}

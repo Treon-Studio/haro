@@ -1,0 +1,37 @@
+---
+import SuperAdminLayout from '@/layouts/SuperAdminLayout.astro'
+import { query } from "@/lib/neon/client"
+import { AuditLogViewer } from '@/../blocks/super-admin/AuditLogViewer'
+
+const session = Astro.locals.session
+if (!session) {
+  return Astro.redirect('/login')
+}
+
+// Pre-fetch latest 100 immutable audit log entries server-side
+const { rows: logs } = await query(
+  "SELECT id, timestamp, level, message, context, service, environment, error FROM public.audit_log ORDER BY timestamp DESC LIMIT 100"
+)
+
+const formattedLogs = (logs || []).map((log: any) => ({
+  id: log.id,
+  timestamp: log.timestamp,
+  level: log.level,
+  message: log.message,
+  context: log.context || {},
+  service: log.service,
+  environment: log.environment,
+  error: log.error || null,
+}))
+---
+
+<SuperAdminLayout title="System Audit Logs - Super Admin Console">
+  <div class="p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">System Audit Logs</h1>
+      <p class="text-sm text-text-secondary">Tinjau, lacak, dan analisis rekam jejak aktivitas operasional yang bersifat sensitif.</p>
+    </div>
+
+    <AuditLogViewer initialLogs={formattedLogs} client:load />
+  </div>
+</SuperAdminLayout>

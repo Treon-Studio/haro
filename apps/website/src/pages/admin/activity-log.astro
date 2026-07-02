@@ -1,0 +1,35 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { query } from '@/lib/neon/client'
+import { ActivityLogTable } from '@/../blocks/admin/ActivityLogTable'
+
+const session = Astro.locals.session
+if (!session) {
+  return Astro.redirect('/login')
+}
+
+// Security: Verify user is B2B Owner/Admin
+const { rows: membership } = await query(
+  `SELECT company_id FROM public.company_memberships 
+   WHERE user_id = $1 AND role IN ('owner', 'admin', 'super_admin') AND status = 'active' 
+   LIMIT 1`,
+  [session.userId]
+)
+
+if (!membership || membership.length === 0) {
+  return Astro.redirect('/c')
+}
+
+const companyId = membership[0].company_id
+---
+
+<BaseLayout title="Activity Logs - TenangAI" description="Rekam jejak tindakan administratif B2B.">
+  <div class="p-6 md:p-8 space-y-6 max-w-4xl mx-auto">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-text-primary">Audit Log Trail</h1>
+      <p class="text-sm text-text-secondary">Analisis, tinjau, dan pantau rekam jejak aktivitas admin di lingkup organisasi Anda.</p>
+    </div>
+
+    <ActivityLogTable companyId={companyId} client:load />
+  </div>
+</BaseLayout>

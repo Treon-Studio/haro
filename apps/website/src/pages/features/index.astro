@@ -1,0 +1,12 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import Features from '../../../blocks/features/three'
+import CallToAction from '../../../blocks/call-to-action/four'
+import Footer from '../../../blocks/footer/one'
+---
+
+<BaseLayout title="Features - TenangAI" description="Explore all TenangAI features and capabilities">
+    <Features client:load />
+    <CallToAction />
+    <Footer />
+</BaseLayout>

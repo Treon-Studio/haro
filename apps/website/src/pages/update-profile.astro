@@ -1,0 +1,15 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { ProfileCompleter } from '@/../blocks/profiles/ProfileCompleter'
+
+const session = Astro.locals.session
+if (!session) {
+  return Astro.redirect('/login')
+}
+---
+
+<BaseLayout title="Lengkapi Profil Anda - TenangAI" description="Bantu kami memetakan kebaikan kesehatan mental Anda.">
+  <div class="flex items-center justify-center min-h-screen bg-surface-secondary/20 py-12 px-4">
+    <ProfileCompleter client:load />
+  </div>
+</BaseLayout>

@@ -1,0 +1,14 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ShareView from '@/../blocks/share/index';
+
+// We get the ID from the URL using Astro params
+const { id } = Astro.params;
+---
+
+<BaseLayout
+	title="Shared Conversation - Tenang"
+	description="View a shared conversation."
+>
+	<ShareView shareId={id || 'unknown'} client:load />
+</BaseLayout>

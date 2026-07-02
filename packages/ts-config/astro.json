@@ -1,0 +1,12 @@
+{
+    "extends": "./base.json",
+    "compilerOptions": {
+        "jsx": "preserve",
+        "jsxImportSource": "astro",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": ["./src/*"],
+            "@treonstudio/bungas-core/*": ["../core/src/*"]
+        }
+    }
+}

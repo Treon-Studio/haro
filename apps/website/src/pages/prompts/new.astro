@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="New Prompt - Tenang"
+	description="Create a new system prompt."
+>
+	<ChatBlock view="prompts" client:load />
+</BaseLayout>

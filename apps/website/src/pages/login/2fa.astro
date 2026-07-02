@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import TwoFactorScreen from '@/../blocks/auth/two-factor';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="Two-Factor Auth - Tenang"
+	description="Verify your identity."
+>
+	<TwoFactorScreen client:load />
+</BaseLayout>

@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import OAuthSuccess from '@/../blocks/auth/oauth-success';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="Authentication Successful - Tenang"
+	description="Successfully logged in."
+>
+	<OAuthSuccess client:load />
+</BaseLayout>

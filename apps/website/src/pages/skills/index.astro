@@ -1,0 +1,13 @@
+---
+import ChatLayout from '@/layouts/ChatLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<ChatLayout
+	title="Skills - Tenang"
+	description="Manage your AI capabilities and skills."
+>
+	<ChatBlock view="skills" client:load />
+</ChatLayout>

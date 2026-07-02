@@ -1,0 +1,15 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { OrientationBlock } from '@/../blocks/profiles/OrientationBlock'
+
+const session = Astro.locals.session
+if (!session) {
+  return Astro.redirect('/login')
+}
+---
+
+<BaseLayout title="Orientasi & Kebijakan - TenangAI" description="Mari kenali batasan klinis dan jaminan privasi TenangAI sebelum berkonsultasi.">
+  <div class="flex items-center justify-center min-h-screen bg-surface-secondary/20 py-12 px-4">
+    <OrientationBlock client:load />
+  </div>
+</BaseLayout>

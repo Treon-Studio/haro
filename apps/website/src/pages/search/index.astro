@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SearchView from '@/../blocks/search/index';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="Search - Tenang"
+	description="Search across all conversations."
+>
+	<SearchView client:load />
+</BaseLayout>

@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+const { id } = Astro.params;
+---
+
+<BaseLayout
+	title="Chat - Tenang"
+	description="AI Assistant"
+>
+	<ChatBlock view="chat" chatId={id} client:load />
+</BaseLayout>

@@ -1,0 +1,35 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { query } from '@/lib/neon/client'
+import { SupportTicketLogger } from '@/../blocks/admin/SupportTicketLogger'
+
+const session = Astro.locals.session
+if (!session) {
+  return Astro.redirect('/login')
+}
+
+// Security: Verify user is B2B Owner/Admin
+const { rows: membership } = await query(
+  `SELECT company_id FROM public.company_memberships 
+   WHERE user_id = $1 AND role IN ('owner', 'admin', 'super_admin') AND status = 'active' 
+   LIMIT 1`,
+  [session.userId]
+)
+
+if (!membership || membership.length === 0) {
+  return Astro.redirect('/c')
+}
+
+const companyId = membership[0].company_id
+---
+
+<BaseLayout title="Support Tickets - TenangAI" description="Hubungi bantuan operasional B2B kami secara aman.">
+  <div class="p-6 md:p-8 space-y-6 max-w-4xl mx-auto">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight text-text-primary">Aduan & Bantuan Teknis</h1>
+      <p class="text-sm text-text-secondary">Log, pantau, dan ajukan tiket bantuan teknis atau operasional khusus dari HR untuk tim kami.</p>
+    </div>
+
+    <SupportTicketLogger companyId={companyId} client:load />
+  </div>
+</BaseLayout>

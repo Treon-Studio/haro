@@ -1,0 +1,21 @@
+---
+import SuperAdminLayout from '@/layouts/SuperAdminLayout.astro'
+import { FeatureFlagToggler } from '@/../blocks/super-admin/FeatureFlagToggler'
+
+const companyId = Astro.params.id
+
+if (!companyId) {
+  return Astro.redirect('/super-admin/tenants')
+}
+---
+
+<SuperAdminLayout title="Features Configuration - Super Admin Console">
+  <div class="p-6 md:p-8 space-y-6 max-w-4xl mx-auto">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">Tenant Module Configuration</h1>
+      <p class="text-sm text-text-secondary">Ubah ketersediaan fungsionalitas modul-modul modular khusus untuk tenant B2B ini.</p>
+    </div>
+
+    <FeatureFlagToggler companyId={companyId} client:load />
+  </div>
+</SuperAdminLayout>

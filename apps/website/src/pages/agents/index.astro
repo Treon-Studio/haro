@@ -1,0 +1,13 @@
+---
+import ChatLayout from '@/layouts/ChatLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<ChatLayout
+	title="Agent Marketplace - Tenang"
+	description="Discover AI agents."
+>
+	<ChatBlock view="agents" client:load />
+</ChatLayout>

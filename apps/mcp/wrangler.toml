@@ -1,0 +1,42 @@
+name = "treon-mcp"
+main = "src/index.ts"
+compatibility_date = "2026-06-30"
+compatibility_flags = ["nodejs_compat"]
+
+# KV Namespaces
+[[kv_namespaces]]
+binding = "OKF_KV"
+id = ""
+preview_id = ""
+
+# Durable Objects
+[[durable_objects.bindings]]
+name = "GRAPH_DO"
+class_name = "GraphDurableObject"
+
+[[durable_objects.bindings]]
+name = "SESSION_DO"
+class_name = "SessionDurableObject"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["GraphDurableObject", "SessionDurableObject"]
+
+# Environment Variables
+[vars]
+GITHUB_OWNER = ""
+GITHUB_REPO = ""
+GITHUB_BRANCH = "main"
+DOCS_PATH = "docs"
+MAX_CONTEXT_TOKENS = "8000"
+MAX_GRAPH_DEPTH = "3"
+MCP_API_KEY = ""
+
+# Secrets (set via wrangler secret put)
+# GITHUB_TOKEN
+# WEBHOOK_SECRET
+# SYNC_TOKEN
+
+# Rate Limiting
+[limits]
+cpu_ms = 30000

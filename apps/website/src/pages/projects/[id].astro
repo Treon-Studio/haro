@@ -1,0 +1,11 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+---
+
+<BaseLayout
+	title="Project - Tenang"
+	description="Manage your AI project workspace."
+>
+	<ChatBlock view="projects" client:load />
+</BaseLayout>

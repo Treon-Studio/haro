@@ -1,0 +1,37 @@
+name = "tenang-haro-gateway"
+compatibility_date = "2024-12-05"
+main = "src/index.ts"
+compatibility_flags = [ "nodejs_compat" ]
+
+[vars]
+ENVIRONMENT = 'dev'
+CUSTOM_HEADERS_TO_IGNORE = []
+USE_DB_CONFIG = 'true'
+
+[[kv_namespaces]]
+binding = "HARO_CONFIG_CACHE"
+id = "78e6714749c34e17ac449ba99341b471" # Local development cache namespace
+
+#
+#Configuration for DEVELOPMENT environment
+#
+[env.staging]
+name = "rubeus-dev"
+
+[env.staging.vars]
+ENVIRONMENT = 'staging'
+CUSTOM_HEADERS_TO_IGNORE = []
+USE_DB_CONFIG = 'true'
+
+
+#
+#Configuration for PRODUCTION environment
+#
+[env.production]
+name = "rubeus"
+logpush=true
+
+[env.production.vars]
+ENVIRONMENT = 'production'
+CUSTOM_HEADERS_TO_IGNORE = []
+USE_DB_CONFIG = 'true'

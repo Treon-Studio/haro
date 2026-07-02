@@ -1,0 +1,13 @@
+---
+import ChatLayout from '@/layouts/ChatLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<ChatLayout
+	title="Prompts - Tenang"
+	description="Manage your custom system prompts."
+>
+	<ChatBlock view="prompts" client:load />
+</ChatLayout>

@@ -1,0 +1,13 @@
+---
+import ChatLayout from '@/layouts/ChatLayout.astro';
+import { ChatBlock } from '@/../blocks/chat';
+
+export const prerender = false;
+---
+
+<ChatLayout
+  title="Chat - TenangAI"
+  description="Chat with TenangAI"
+>
+  <ChatBlock client:load />
+</ChatLayout>

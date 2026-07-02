@@ -1,0 +1,17 @@
+---
+import SuperAdminLayout from '@/layouts/SuperAdminLayout.astro'
+import { TenantProvisioner } from '@/../blocks/super-admin/TenantProvisioner'
+
+const handoffId = Astro.url.searchParams.get('handoff') || null
+---
+
+<SuperAdminLayout title="Tenants Provisioning - Super Admin Console">
+  <div class="p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">Tenants Provisioning</h1>
+      <p class="text-sm text-text-secondary">Deploy, isolasi, dan kelola tenant B2B dari dokumen sales handoff yang valid.</p>
+    </div>
+
+    <TenantProvisioner initialHandoffId={handoffId} client:load />
+  </div>
+</SuperAdminLayout>

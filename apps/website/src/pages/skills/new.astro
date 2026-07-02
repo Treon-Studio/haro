@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="New Skill - Tenang"
+	description="Create a new AI skill."
+>
+	<ChatBlock view="skills" client:load />
+</BaseLayout>

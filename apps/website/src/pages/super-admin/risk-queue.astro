@@ -1,0 +1,15 @@
+---
+import SuperAdminLayout from '@/layouts/SuperAdminLayout.astro'
+import { RiskQueue } from '@/../blocks/super-admin/RiskQueue'
+---
+
+<SuperAdminLayout title="Triage Queue - Super Admin Console">
+  <div class="p-6 md:p-8 space-y-6 max-w-6xl mx-auto">
+    <div>
+      <h1 class="text-3xl font-extrabold tracking-tight">Clinical Triage Board</h1>
+      <p class="text-sm text-text-secondary">Antrean mitigasi krisis psikologis secara real-time demi keselamatan pengguna.</p>
+    </div>
+
+    <RiskQueue client:load />
+  </div>
+</SuperAdminLayout>

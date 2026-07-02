@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import OAuthError from '@/../blocks/auth/oauth-error';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="Authentication Failed - Tenang"
+	description="Failed to login."
+>
+	<OAuthError client:load />
+</BaseLayout>

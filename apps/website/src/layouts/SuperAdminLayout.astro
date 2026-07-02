@@ -1,0 +1,129 @@
+---
+import '@/styles/globals.css'
+import { query } from "@/lib/neon/client"
+import { Buildings2Linear, FileTextLinear, CodeLinear, ShieldCheckLinear } from 'solar-icon-set';
+import { WidgetLinear, Logout3Linear, ArrowLeftLinear } from 'solar-icon-set';;
+
+export interface Props {
+  title?: string
+}
+
+const { title = 'Super Admin Console - TenangAI' } = Astro.props
+
+const session = Astro.locals.session
+if (!session) {
+  return Astro.redirect('/login')
+}
+
+// Secure server-side check: must have active super_admin membership
+const { rows } = await query(
+  "SELECT id FROM public.company_memberships WHERE user_id = $1 AND role = 'super_admin' AND status = 'active' LIMIT 1",
+  [session.userId]
+)
+
+if (rows.length === 0) {
+  return Astro.redirect('/c')
+}
+
+const pathname = Astro.url.pathname
+const activeClass = "bg-brand-primary/10 text-brand-primary font-semibold"
+const inactiveClass = "text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body class="bg-surface-primary text-text-primary">
+    <div class="flex h-screen overflow-hidden">
+      <!-- Sidebar -->
+      <aside class="hidden md:flex flex-col w-64 border-r border-border-primary bg-surface-primary p-4 shrink-0 justify-between">
+        <div class="space-y-6">
+          <!-- Logo & Title -->
+          <div class="flex items-center gap-2 px-2 py-3">
+            <ShieldCheckLinear className="h-6 w-6 text-brand-primary shrink-0" />
+            <div>
+              <span class="font-extrabold text-lg text-text-primary tracking-tight">Tenang Ops</span>
+              <span class="block text-[10px] text-brand-primary font-bold uppercase tracking-wider">Super Admin Console</span>
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="space-y-1">
+            <a
+              href="/super-admin"
+              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${pathname === '/super-admin' ? activeClass : inactiveClass}`}
+            >
+              <WidgetLinear className="h-4 w-4" />
+              Overview Dashboard
+            </a>
+            <a
+              href="/super-admin/handoffs"
+              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${pathname.startsWith('/super-admin/handoffs') ? activeClass : inactiveClass}`}
+            >
+              <FileTextLinear className="h-4 w-4" />
+              Sales Handoffs
+            </a>
+            <a
+              href="/super-admin/tenants"
+              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${pathname.startsWith('/super-admin/tenants') ? activeClass : inactiveClass}`}
+            >
+              <Buildings2Linear className="h-4 w-4" />
+              Tenants Provisioning
+            </a>
+            <a
+              href="/super-admin/audit-log"
+              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${pathname.startsWith('/super-admin/audit-log') ? activeClass : inactiveClass}`}
+            >
+              <CodeLinear className="h-4 w-4" />
+              System Audit Logs
+            </a>
+          </nav>
+        </div>
+
+        <!-- Footer actions -->
+        <div class="space-y-1 border-t border-border-primary pt-4">
+          <a
+            href="/c"
+            class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-text-secondary hover:bg-surface-secondary hover:text-text-primary"
+          >
+            <ArrowLeftLinear className="h-4 w-4" />
+            Kembali ke Chat
+          </a>
+          <button
+            onclick="fetch('/api/auth/logout', { method: 'POST' }).then(() => window.location.href = '/login')"
+            class="flex items-center gap-3 px-3 py-2.5 w-full text-left rounded-lg text-sm text-red-500 hover:bg-red-500/10 transition-colors border-none bg-transparent cursor-pointer"
+          >
+            <Logout3Linear className="h-4 w-4" />
+            Sign Out
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Layout -->
+      <div class="flex flex-col flex-1 overflow-hidden bg-surface-secondary/20">
+        <!-- Top Mobile Navigation Header -->
+        <header class="md:hidden flex items-center justify-between border-b border-border-primary p-4 bg-surface-primary shrink-0">
+          <div class="flex items-center gap-2">
+            <ShieldCheckLinear className="h-5 w-5 text-brand-primary" />
+            <span class="font-extrabold text-sm text-text-primary tracking-tight">Tenang Ops</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <a href="/super-admin" class="p-2 text-text-secondary hover:text-text-primary"><WidgetLinear className="h-5 w-5" /></a>
+            <a href="/super-admin/handoffs" class="p-2 text-text-secondary hover:text-text-primary"><FileTextLinear className="h-5 w-5" /></a>
+            <a href="/super-admin/tenants" class="p-2 text-text-secondary hover:text-text-primary"><Buildings2Linear className="h-5 w-5" /></a>
+            <a href="/super-admin/audit-log" class="p-2 text-text-secondary hover:text-text-primary"><CodeLinear className="h-5 w-5" /></a>
+            <a href="/c" class="p-2 text-text-secondary hover:text-text-primary"><ArrowLeftLinear className="h-5 w-5" /></a>
+          </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 overflow-y-auto">
+          <slot />
+        </main>
+      </div>
+    </div>
+  </body>
+</html>

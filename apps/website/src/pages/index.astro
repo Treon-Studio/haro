@@ -1,0 +1,28 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import LogoCloud from '../../blocks/logo-cloud/two'
+import HeroSection from '../../blocks/hero-section/three'
+import Features from '../../blocks/features/three'
+import Integrations from '../../blocks/integrations/one'
+import ContentBlock from '../../blocks/content/three'
+import Stats from '../../blocks/stats/three'
+import Testimonials from '../../blocks/testimonials/two'
+import CallToAction from '../../blocks/call-to-action/four'
+import FAQs from '../../blocks/faqs/three'
+import Pricing from '../../blocks/pricing/one'
+import Footer from '../../blocks/footer/one'
+---
+
+<BaseLayout>
+    <HeroSection client:load />
+    <LogoCloud client:load />
+    <Stats />
+    <Features client:load />
+    <ContentBlock />
+    <Testimonials />
+    <Integrations />
+    <Pricing />
+    <FAQs client:load />
+    <CallToAction />
+    <Footer />
+</BaseLayout>

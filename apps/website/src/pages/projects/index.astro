@@ -1,0 +1,13 @@
+---
+import ChatLayout from '@/layouts/ChatLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+export const prerender = true;
+---
+
+<ChatLayout
+	title="Projects - Tenang"
+	description="Manage your AI project workspaces."
+>
+	<ChatBlock view="projects" client:load />
+</ChatLayout>

@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import VerifyEmail from '@/../blocks/verify/index';
+
+export const prerender = true;
+---
+
+<BaseLayout
+	title="Verify Email - Tenang"
+	description="Verify your email address."
+>
+	<VerifyEmail client:load />
+</BaseLayout>

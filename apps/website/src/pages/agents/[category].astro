@@ -1,0 +1,13 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import { ChatBlock } from '@/../blocks/chat/index';
+
+const { category } = Astro.params;
+---
+
+<BaseLayout
+	title={`Agent Marketplace - ${category} - Tenang`}
+	description="Discover AI agents."
+>
+	<ChatBlock view="agents" client:load />
+</BaseLayout>
