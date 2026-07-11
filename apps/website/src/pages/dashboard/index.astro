@@ -1,0 +1,66 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro'
+import { MemoryList } from '@/../blocks/dashboard/memory-list'
+import { MemoryGraph } from '@/../blocks/dashboard/memory-graph'
+
+export const prerender = false
+
+const token = import.meta.env.DASHBOARD_TOKEN
+if (token) {
+  const cookieToken = Astro.request.headers.get('cookie')
+    ?.split(';')
+    .map(c => c.trim())
+    .find(c => c.startsWith('dashboard_token='))
+    ?.split('=')[1]
+
+  const headerToken = Astro.request.headers.get('x-dashboard-token')
+
+  if (cookieToken !== token && headerToken !== token) {
+    return Astro.redirect('/login')
+  }
+}
+---
+
+<BaseLayout title="Memory Explorer - Dashboard" description="Memory Explorer Dashboard">
+  <div class="flex h-screen overflow-hidden bg-background">
+    <aside class="w-56 shrink-0 border-r border-border bg-card p-4 flex flex-col gap-6">
+      <h1 class="text-lg font-bold text-foreground tracking-tight">Memory Explorer</h1>
+      <nav class="flex flex-col gap-1">
+        <a href="#memories" class="px-3 py-2 rounded-md text-sm text-foreground bg-surface-active font-medium transition-colors">
+          Memories
+        </a>
+        <a href="#graph" class="px-3 py-2 rounded-md text-sm text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors">
+          Knowledge Graph
+        </a>
+        <a href="#vault" class="px-3 py-2 rounded-md text-sm text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors">
+          Vault
+        </a>
+        <a href="/dashboard/admin/tenants" class="px-3 py-2 rounded-md text-sm text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors">
+          Admin
+        </a>
+      </nav>
+    </aside>
+
+    <main class="flex-1 overflow-y-auto p-6 space-y-8">
+      <section id="memories">
+        <h2 class="text-2xl font-bold text-foreground mb-1">Memories</h2>
+        <p class="text-sm text-text-secondary mb-4">Browse, search, and manage stored memory entries.</p>
+        <MemoryList client:load />
+      </section>
+
+      <section id="graph">
+        <h2 class="text-2xl font-bold text-foreground mb-1">Knowledge Graph</h2>
+        <p class="text-sm text-text-secondary mb-4">Interactive visualization of gbrain pages and their relationships.</p>
+        <MemoryGraph client:load />
+      </section>
+
+      <section id="vault">
+        <h2 class="text-2xl font-bold text-foreground mb-1">Vault</h2>
+        <p class="text-sm text-text-secondary mb-4">Uploaded files and their metadata.</p>
+        <div class="rounded-lg border border-border bg-card p-8 text-center text-text-tertiary">
+          Vault file browser coming soon.
+        </div>
+      </section>
+    </main>
+  </div>
+</BaseLayout>
