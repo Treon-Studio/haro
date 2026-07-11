@@ -7,9 +7,12 @@ import traceback
 
 import httpx
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+from memory_fabric.tenant_manager import TenantManager, ProvisioningError
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +66,180 @@ async def health():
         errors.append(f"gbrain: {e}")
     results["vault"] = "ok"
     return {"status": "ok" if not errors else "degraded", "backends": results, "errors": errors}
+
+
+# Tenant manager singleton
+tenant_manager: TenantManager | None = None
+
+
+def get_tenant_manager() -> TenantManager:
+    global tenant_manager
+    if tenant_manager is None:
+        tenant_manager = TenantManager(
+            neon_url=os.environ.get("NEON_DATABASE_URL", ""),
+            vault_root=os.environ.get("VAULT_ROOT", "/srv/vault-write"),
+            gbrain_env_dir=os.environ.get("GBRAIN_ENV_DIR", "/srv/memory-fabric/env"),
+            management_api_key=os.environ.get("MANAGEMENT_API_KEY", ""),
+        )
+    return tenant_manager
+
+
+def require_auth(request: Request) -> None:
+    api_key = os.environ.get("MANAGEMENT_API_KEY", "")
+    if not api_key:
+        return
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {api_key}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def format_tenant_error(exc: ProvisioningError) -> dict:
+    return {
+        "success": False,
+        "error": {
+            "code": exc.code,
+            "message": exc.message,
+            "details": exc.details,
+        },
+    }
+
+
+@app.put("/api/tenants/provision")
+async def provision_tenant(request: Request):
+    require_auth(request)
+    body = await request.json()
+    tm = get_tenant_manager()
+    try:
+        result = tm.provision(
+            slug=body["slug"],
+            name=body["name"],
+            company_id=body.get("company_id"),
+            created_by=body.get("created_by"),
+            plan=body.get("plan", "free"),
+            description=body.get("description", ""),
+        )
+        return JSONResponse({"success": True, "data": result}, status_code=201)
+    except ProvisioningError as e:
+        status = 409 if e.code == "TENANT_SLUG_EXISTS" else 422 if e.code == "VALIDATION_ERROR" else 500
+        return JSONResponse(format_tenant_error(e), status_code=status)
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "error": {"code": "INTERNAL_ERROR", "message": str(e)}},
+            status_code=500,
+        )
+
+
+@app.get("/api/tenants")
+async def list_tenants(request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    try:
+        page = int(request.query_params.get("page", 1))
+        per_page = int(request.query_params.get("per_page", 20))
+        sort = request.query_params.get("sort", "created_at")
+        order = request.query_params.get("order", "desc")
+        status = request.query_params.get("status")
+        plan = request.query_params.get("plan")
+        search = request.query_params.get("search")
+        created_after = request.query_params.get("created_after")
+        created_before = request.query_params.get("created_before")
+
+        rows, total = tm.list_tenants(
+            page=page, per_page=per_page, sort=sort, order=order,
+            status=status, plan=plan, search=search,
+            created_after=created_after, created_before=created_before,
+        )
+        total_pages = max(1, (total + per_page - 1) // per_page)
+        return JSONResponse({
+            "success": True,
+            "data": rows,
+            "pagination": {
+                "page": page,
+                "per_page": per_page,
+                "total": total,
+                "total_pages": total_pages,
+                "has_next": page < total_pages,
+                "has_prev": page > 1,
+            },
+        })
+    except Exception as e:
+        return JSONResponse(
+            {"success": False, "error": {"code": "INTERNAL_ERROR", "message": str(e)}},
+            status_code=500,
+        )
+
+
+@app.get("/api/tenants/{slug}")
+async def get_tenant(slug: str, request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    tenant = tm.get_tenant(slug)
+    if not tenant:
+        return JSONResponse(
+            {"success": False, "error": {"code": "NOT_FOUND", "message": f"Tenant '{slug}' not found"}},
+            status_code=404,
+        )
+    return JSONResponse({"success": True, "data": tenant})
+
+
+@app.post("/api/tenants/{slug}/suspend")
+async def suspend_tenant(slug: str, request: Request):
+    require_auth(request)
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    tm = get_tenant_manager()
+    try:
+        result = tm.update_status(slug, "suspended", performed_by=body.get("performed_by"), reason=body.get("reason", ""))
+        return JSONResponse({"success": True, "data": result})
+    except ProvisioningError as e:
+        return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
+
+
+@app.post("/api/tenants/{slug}/reactivate")
+async def reactivate_tenant(slug: str, request: Request):
+    require_auth(request)
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    tm = get_tenant_manager()
+    try:
+        result = tm.update_status(slug, "active", performed_by=body.get("performed_by"), reason=body.get("reason", ""))
+        return JSONResponse({"success": True, "data": result})
+    except ProvisioningError as e:
+        return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
+
+
+@app.post("/api/tenants/{slug}/schedule-delete")
+async def schedule_delete(slug: str, request: Request):
+    require_auth(request)
+    body = await request.json() if request.headers.get("content-type") == "application/json" else {}
+    tm = get_tenant_manager()
+    try:
+        result = tm.update_status(slug, "deleting", performed_by=body.get("performed_by"), reason=body.get("reason", ""))
+        return JSONResponse({"success": True, "data": result})
+    except ProvisioningError as e:
+        return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
+
+
+@app.get("/api/tenants/{slug}/stats")
+async def get_tenant_stats(slug: str, request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    stats = tm.get_stats(slug)
+    if not stats:
+        return JSONResponse(
+            {"success": False, "error": {"code": "NOT_FOUND", "message": f"Tenant '{slug}' not found"}},
+            status_code=404,
+        )
+    return JSONResponse({"success": True, "data": stats})
+
+
+@app.get("/api/tenants/audit-log")
+async def audit_log(request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    tenant_id = request.query_params.get("tenant_id")
+    action = request.query_params.get("action")
+    limit = int(request.query_params.get("limit", 50))
+    rows = tm.get_audit_log(tenant_id=tenant_id, action=action, limit=limit)
+    return JSONResponse({"success": True, "data": rows})
 
 
 def run():
