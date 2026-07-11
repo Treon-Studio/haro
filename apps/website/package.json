@@ -25,7 +25,7 @@
     "@astrojs/react": "^4.2.0",
     "@effect/schema": "^0.75.5",
     "@langchain/core": "^1.2.0",
-    "@neondatabase/serverless": "^0.10.0",
+    "@neondatabase/serverless": "^0.10.4",
     "@radix-ui/react-hover-card": "^1.1.13",
     "@radix-ui/react-slot": "^1.1.2",
     "@radix-ui/react-toggle": "^1.1.8",
@@ -47,6 +47,8 @@
     "recharts": "^2.15.1",
     "solar-icon-set": "^2.0.1",
     "tailwind-merge": "^3.0.1",
+    "vis-data": "^8.0.4",
+    "vis-network": "^10.1.0",
     "wrangler": "^3.99.0"
   },
   "devDependencies": {
