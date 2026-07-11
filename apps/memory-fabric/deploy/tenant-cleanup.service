@@ -1,0 +1,10 @@
+; apps/memory-fabric/deploy/tenant-cleanup.service
+[Unit]
+Description=Tenant cleanup — remove expired soft-deleted tenant resources
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/memory-fabric-mcp-venv/bin/python /root/go-workspace/haro/apps/memory-fabric/scripts/tenant-cleanup.py
+User=root
+EnvironmentFile=/etc/memory-fabric-mcp/env
