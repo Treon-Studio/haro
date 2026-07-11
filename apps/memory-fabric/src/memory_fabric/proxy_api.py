@@ -145,6 +145,7 @@ async def provision_tenant(request: Request):
             created_by=body.get("created_by"),
             plan=body.get("plan", "free"),
             description=body.get("description", ""),
+            ip_address=request.client.host if request.client else None,
         )
         return JSONResponse({"success": True, "data": result}, status_code=201)
     except ProvisioningError as e:
@@ -227,7 +228,7 @@ async def suspend_tenant(slug: str, request: Request):
     body = await request.json() if request.headers.get("content-type") == "application/json" else {}
     tm = get_tenant_manager()
     try:
-        result = tm.update_status(slug, "suspended", performed_by=body.get("performed_by"), reason=body.get("reason", ""))
+        result = tm.update_status(slug, "suspended", performed_by=body.get("performed_by"), reason=body.get("reason", ""), ip_address=request.client.host if request.client else None)
         return JSONResponse({"success": True, "data": result})
     except ProvisioningError as e:
         return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
@@ -239,7 +240,7 @@ async def reactivate_tenant(slug: str, request: Request):
     body = await request.json() if request.headers.get("content-type") == "application/json" else {}
     tm = get_tenant_manager()
     try:
-        result = tm.update_status(slug, "active", performed_by=body.get("performed_by"), reason=body.get("reason", ""))
+        result = tm.update_status(slug, "active", performed_by=body.get("performed_by"), reason=body.get("reason", ""), ip_address=request.client.host if request.client else None)
         return JSONResponse({"success": True, "data": result})
     except ProvisioningError as e:
         return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
@@ -251,7 +252,7 @@ async def schedule_delete(slug: str, request: Request):
     body = await request.json() if request.headers.get("content-type") == "application/json" else {}
     tm = get_tenant_manager()
     try:
-        result = tm.update_status(slug, "deleting", performed_by=body.get("performed_by"), reason=body.get("reason", ""))
+        result = tm.update_status(slug, "deleting", performed_by=body.get("performed_by"), reason=body.get("reason", ""), ip_address=request.client.host if request.client else None)
         return JSONResponse({"success": True, "data": result})
     except ProvisioningError as e:
         return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
@@ -273,3 +274,14 @@ async def get_tenant_stats(slug: str, request: Request):
 def run():
     port = int(os.environ.get("PROXY_PORT", "8771"))
     uvicorn.run(app, host="127.0.0.1", port=port, log_level=os.environ.get("LOG_LEVEL", "INFO").lower())
+
+from datetime import datetime as _datetime
+
+class _CustomEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, _datetime):
+            return obj.isoformat()
+        try:
+            return super().default(obj)
+        except TypeError:
+            return str(obj)

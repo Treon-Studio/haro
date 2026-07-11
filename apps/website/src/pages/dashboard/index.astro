@@ -6,6 +6,9 @@ import { MemoryGraph } from '@/../blocks/dashboard/memory-graph'
 export const prerender = false
 
 const token = import.meta.env.DASHBOARD_TOKEN
+if (!token) {
+  return Astro.redirect('/login')
+}
 if (token) {
   const cookieToken = Astro.request.headers.get('cookie')
     ?.split(';')

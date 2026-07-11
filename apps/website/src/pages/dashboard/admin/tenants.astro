@@ -6,6 +6,9 @@ export const prerender = false
 
 // Auth gate — redirect if not admin
 const token = import.meta.env.DASHBOARD_TOKEN
+if (!token) {
+  return Astro.redirect('/login')
+}
 if (token) {
   const cookieToken = Astro.request.headers.get('cookie')
     ?.split(';').map(c => c.trim()).find(c => c.startsWith('dashboard_token='))?.split('=')[1]

@@ -39,6 +39,7 @@ CREATE INDEX IF NOT EXISTS idx_tenants_status ON tenants(status) WHERE deleted_a
 CREATE INDEX IF NOT EXISTS idx_tenants_plan ON tenants(plan);
 CREATE INDEX IF NOT EXISTS idx_tenants_company ON tenants(company_id) WHERE company_id IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_tenants_created_at ON tenants(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tenants_search ON tenants USING gin(to_tsvector('simple', name || ' ' || slug));
 
 CREATE TABLE IF NOT EXISTS tenant_audit_log (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),

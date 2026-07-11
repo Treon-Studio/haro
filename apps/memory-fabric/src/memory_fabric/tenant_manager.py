@@ -98,6 +98,7 @@ class TenantManager:
         created_by: Optional[str] = None,
         plan: str = "free",
         description: str = "",
+        ip_address: Optional[str] = None,
     ) -> dict:
         self._validate_slug(slug)
         db = self._get_db()
@@ -134,9 +135,9 @@ class TenantManager:
 
             db.execute(
                 """INSERT INTO tenant_audit_log
-                   (tenant_id, action, performed_by, metadata, created_at)
-                   VALUES (%s,'provisioned',%s,%s,%s)""",
-                slug, created_by, json.dumps({"plan": plan}), now,
+                   (tenant_id, action, performed_by, ip_address, metadata, created_at)
+                   VALUES (%s,'provisioned',%s,%s,%s,%s)""",
+                slug, created_by, ip_address, json.dumps({"plan": plan}), now,
             )
 
             logger.info("Provisioned tenant", extra={"slug": slug, "name": name})
@@ -243,7 +244,14 @@ class TenantManager:
 
         return [dict(r) for r in rows], total
 
-    def update_status(self, slug: str, new_status: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
+    _ALLOWED_TRANSITIONS = {
+        "active": {"suspended", "deleting"},
+        "suspended": {"active", "deleting"},
+        "deleting": set(),  # only cron can move to deleted
+        "deleted": set(),    # terminal state
+    }
+
+    def update_status(self, slug: str, new_status: str, performed_by: Optional[str] = None, reason: str = "", ip_address: Optional[str] = None) -> dict:
         if new_status not in {"suspended", "active", "deleting"}:
             raise ProvisioningError("INVALID_STATUS", f"Invalid status '{new_status}'")
         db = self._get_db()
@@ -252,6 +260,11 @@ class TenantManager:
             raise ProvisioningError("NOT_FOUND", f"Tenant '{slug}' not found")
 
         old_status = row["status"]
+        if new_status not in self._ALLOWED_TRANSITIONS.get(old_status, set()):
+            raise ProvisioningError(
+                "INVALID_TRANSITION",
+                f"Cannot transition tenant from '{old_status}' to '{new_status}'",
+            )
         now = datetime.now(timezone.utc)
 
         updates = {"status": new_status}
@@ -265,11 +278,12 @@ class TenantManager:
         db.execute(f"UPDATE tenants SET {set_clause} WHERE slug = %s", *values, slug)
 
         db.execute(
-            """INSERT INTO tenant_audit_log (tenant_id, action, performed_by, metadata, created_at)
-               VALUES (%s,%s,%s,%s,%s)""",
+            """INSERT INTO tenant_audit_log (tenant_id, action, performed_by, ip_address, metadata, created_at)
+               VALUES (%s,%s,%s,%s,%s,%s)""",
             slug,
             f"{'suspended' if new_status == 'suspended' else 'reactivated' if new_status == 'active' else 'deletion_scheduled'}",
             performed_by,
+            ip_address,
             json.dumps({"reason": reason, "old_status": old_status}),
             now,
         )
@@ -306,14 +320,14 @@ class TenantManager:
             "limits": limits,
         }
 
-    def suspend(self, slug: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
-        return self.update_status(slug, "suspended", performed_by, reason)
+    def suspend(self, slug: str, performed_by: Optional[str] = None, reason: str = "", ip_address: Optional[str] = None) -> dict:
+        return self.update_status(slug, "suspended", performed_by, reason, ip_address)
 
-    def reactivate(self, slug: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
-        return self.update_status(slug, "active", performed_by, reason)
+    def reactivate(self, slug: str, performed_by: Optional[str] = None, reason: str = "", ip_address: Optional[str] = None) -> dict:
+        return self.update_status(slug, "active", performed_by, reason, ip_address)
 
-    def schedule_delete(self, slug: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
-        return self.update_status(slug, "deleting", performed_by, reason)
+    def schedule_delete(self, slug: str, performed_by: Optional[str] = None, reason: str = "", ip_address: Optional[str] = None) -> dict:
+        return self.update_status(slug, "deleting", performed_by, reason, ip_address)
 
     def close(self):
         if self._db is not None:
