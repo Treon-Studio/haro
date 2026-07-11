@@ -1,55 +1,50 @@
-# Tenang
+# Haro Monorepo
 
-An Astro 5 marketing site and AI chat application — a superset of LibreChat features, ported from Next.js to Astro + Cloudflare Workers. Built with React 19 islands, Tailwind CSS v4, and Supabase.
+**Haro** is the AI ecosystem by Treon Studio — a collection of products and services for
+conversational AI, mental wellness, voice assistance, and LLM tooling.
 
-## Tech Stack
+## Projects
 
-| Layer | Choice |
-|---|---|
-| Framework | [Astro 5](https://astro.build) (SSR on Cloudflare Workers) |
-| UI (client) | React 19 islands, Radix UI, Lucide icons |
-| Styling | Tailwind CSS v4 (`@tailwindcss/vite`, no config file) |
-| Backend | Cloudflare Workers via `@astrojs/cloudflare` |
-| Database / Auth | Supabase (Postgres, email/password + OAuth + 2FA) |
-| State / Errors | Effect-TS, LangChain |
-| Package manager | pnpm 9.10 (turborepo) |
+| Path | Package | Description |
+|------|---------|-------------|
+| `apps/website` | `@treonstudio/website` | **Tenang** — AI mental wellness web app (Astro 5 + React 19, Cloudflare Workers) |
+| `apps/haro-voice` | — | **Ara** — Python voice assistant (openWakeWord, MiniMax STT/TTS, OpenRouter LLM, FastAPI) |
+| `apps/memory-fabric` | — | Python MCP server for mem0 (memory), gbrain (knowledge graph), vault (file storage), tenant management |
+| `apps/haro-gateway` | `@treonstudio/gateway` | AI proxy gateway — routes to 250+ LLMs with fallbacks, caching, guardrails (based on Portkey AI Gateway) |
+| `apps/mcp` | `@treonstudio/mcp` | "OKF" MCP Server for knowledge graph navigation |
+| `packages/core` | `@treonstudio/bungas-core` | Shared React 19 UI primitives (shadcn), hooks, utils |
+| `packages/ts-config` | `@treonstudio/ts-config` | Shared TypeScript configurations |
 
-## Structure
-
-```
-tenang/
-├── apps/website/        # Astro app (the deployable site)
-│   ├── blocks/          # Marketing sections (hero, pricing, chat, etc.)
-│   ├── src/
-│   │   ├── domain/      # Domain-driven design: auth, projects, agents, prompts, skills
-│   │   ├── pages/       # API routes + index.astro page
-│   │   ├── components/  # Re-themed shadcn primitives ("Veil Kit")
-│   │   └── lib/         # Supabase client, API helpers
-│   └── supabase/        # DB migrations
-├── packages/
-│   ├── core/            # Shared UI primitives (shadcn), hooks, utils
-│   └── ts-config/       # Shared tsconfig base files
-└── graphify-out/        # Knowledge graph (run /graphify to rebuild)
-```
-
-## Commands
+## Quick Start
 
 ```bash
-pnpm dev        # Start dev server
-pnpm build      # Build for production
-pnpm start      # wrangler dev (Cloudflare Workers runtime)
-pnpm check      # astro check (type checking + diagnostics)
-pnpm lint       # ESLint (website)
-pnpm test       # Vitest (apps/website)
+# Install dependencies (website/gateway)
+pnpm install
+
+# Run website locally
+pnpm dev
+
+# Build website
+pnpm build
+
+# Check types & lint
+pnpm check
+pnpm lint
+
+# Run tests
+pnpm test
 ```
 
-## Development
+## Per-Project Docs
 
-- Blocks are React components in `blocks/<section>/<variant>/`.
-- Interactive blocks use `'use client'` and load as islands.
-- API routes live in `src/pages/api/` — deployed as Cloudflare Workers endpoints.
-- Add a supabase migration in `apps/website/supabase/migrations/`.
+- `apps/website/` — [Tenang website](apps/website/README.md)
+- `apps/haro-voice/` — [Ara voice assistant](apps/haro-voice/README.md)
+- `apps/memory-fabric/` — [Memory Fabric MCP server](apps/memory-fabric/README.md)
+- `apps/haro-gateway/` — [AI gateway](apps/haro-gateway/README.md)
+- `apps/mcp/` — [OKF MCP server](apps/mcp/README.md)
+- `packages/core/` — [UI component library](packages/core/README.md)
+- `packages/ts-config/` — [Shared TS configs](packages/ts-config/README.md)
 
-## Knowledge Graph
+## License
 
-Running `/graphify` in the repo root builds a navigable knowledge graph of the codebase in `graphify-out/`. Open `graphify-out/graph.html` in a browser to explore, or read `graphify-out/GRAPH_REPORT.md` for the full audit.
+MIT — see [LICENSE.md](LICENSE.md).
