@@ -52,12 +52,12 @@ async def call_tool(req: ToolRequest):
             _tenant_status_cache[tenant] = cached
             _tenant_cache_ttl[tenant] = time()
 
-        if cached == "suspended":
+        if cached in ("suspended", "deleting", "deleted"):
             return JSONResponse(
                 {
                     "error": {
-                        "code": "TENANT_SUSPENDED",
-                        "message": f"Tenant '{tenant}' is suspended. Contact support to reactivate.",
+                        "code": "TENANT_UNAVAILABLE",
+                        "message": f"Tenant '{tenant}' is {cached}. Contact support for assistance.",
                     }
                 },
                 status_code=403,
@@ -209,6 +209,29 @@ async def audit_log(request: Request):
     return JSONResponse({"success": True, "data": rows})
 
 
+@app.get("/api/tenants/{slug}/stats")
+async def get_tenant_stats(slug: str, request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    stats = tm.get_stats(slug)
+    if not stats:
+        return JSONResponse(
+            {"success": False, "error": {"code": "NOT_FOUND", "message": f"Tenant '{slug}' not found"}},
+            status_code=404,
+        )
+    return JSONResponse({"success": True, "data": stats})
+
+
+@app.get("/api/tenants/{slug}/audit-log")
+async def tenant_audit_log(slug: str, request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    action = request.query_params.get("action")
+    limit = int(request.query_params.get("limit", 50))
+    rows = tm.get_audit_log(tenant_id=slug, action=action, limit=limit)
+    return JSONResponse({"success": True, "data": rows})
+
+
 @app.get("/api/tenants/{slug}")
 async def get_tenant(slug: str, request: Request):
     require_auth(request)
@@ -256,19 +279,6 @@ async def schedule_delete(slug: str, request: Request):
         return JSONResponse({"success": True, "data": result})
     except ProvisioningError as e:
         return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
-
-
-@app.get("/api/tenants/{slug}/stats")
-async def get_tenant_stats(slug: str, request: Request):
-    require_auth(request)
-    tm = get_tenant_manager()
-    stats = tm.get_stats(slug)
-    if not stats:
-        return JSONResponse(
-            {"success": False, "error": {"code": "NOT_FOUND", "message": f"Tenant '{slug}' not found"}},
-            status_code=404,
-        )
-    return JSONResponse({"success": True, "data": stats})
 
 
 def run():

@@ -140,7 +140,7 @@ class TenantManager:
                 slug, created_by, ip_address, json.dumps({"plan": plan}), now,
             )
 
-            logger.info("Provisioned tenant", extra={"slug": slug, "name": name})
+            logger.info("Provisioned tenant %s (%s)", slug, name)
             return {
                 "slug": slug,
                 "name": name,
@@ -160,7 +160,7 @@ class TenantManager:
             )
         except Exception as e:
             self._rollback(created_resources)
-            logger.error("Provisioning failed", extra={"slug": slug, "error": str(e)})
+            logger.error("Provisioning failed for %s: %s", slug, e)
             raise ProvisioningError(
                 "PROVISIONING_FAILED",
                 f"Failed to provision tenant: {e}",
