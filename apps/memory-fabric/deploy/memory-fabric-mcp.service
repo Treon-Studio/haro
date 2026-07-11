@@ -1,0 +1,16 @@
+[Unit]
+Description=memory-fabric-mcp — MCP tools for mem0, gbrain, and vault
+After=network-online.target mem0.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+EnvironmentFile=/etc/memory-fabric-mcp/env
+ExecStart=/opt/memory-fabric-mcp-venv/bin/python -m memory_fabric_mcp
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

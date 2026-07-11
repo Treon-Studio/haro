@@ -76,3 +76,133 @@ def test_integration_vault_dir_creation(manager):
     # cleanup
     vault.rmdir()
     Path(manager.gbrain_env_dir, f"{slug}.env").unlink()
+
+
+class TestGetTenant:
+    def test_returns_tenant(self, manager):
+        manager._db.fetchrow.return_value = {
+            "id": "t1", "company_id": None, "name": "Test", "slug": "test-tenant",
+            "description": "", "status": "active", "plan": "free",
+            "vault_path": "/vault/test-tenant", "gbrain_env_path": "/env/test-tenant.env",
+            "quota_max_memories": 100, "quota_max_vault_bytes": 1000,
+            "quota_max_gbrain_pages": 10, "quota_max_users": 5,
+            "usage_memories": 0, "usage_vault_bytes": 0, "usage_gbrain_pages": 0,
+            "provisioned_at": None, "last_active_at": None, "suspended_at": None,
+            "deleted_at": None, "created_at": None, "updated_at": None,
+        }
+        result = manager.get_tenant("test-tenant")
+        assert result is not None
+        assert result["slug"] == "test-tenant"
+
+    def test_returns_none_when_not_found(self, manager):
+        manager._db.fetchrow.return_value = None
+        assert manager.get_tenant("nonexistent") is None
+
+
+class TestListTenants:
+    def test_returns_tenants(self, manager):
+        manager._db.fetchrow.return_value = {"cnt": 1}
+        manager._db.fetch.return_value = [
+            {"slug": "t1", "name": "T1", "status": "active", "plan": "free",
+             "usage_memories": 0, "usage_vault_bytes": 0, "usage_gbrain_pages": 0,
+             "provisioned_at": None, "last_active_at": None},
+        ]
+        results, total = manager.list_tenants()
+        assert len(results) == 1
+        assert total == 1
+        assert results[0]["slug"] == "t1"
+
+    def test_returns_empty(self, manager):
+        manager._db.fetchrow.return_value = {"cnt": 0}
+        manager._db.fetch.return_value = []
+        results, total = manager.list_tenants()
+        assert results == []
+        assert total == 0
+
+
+class TestSuspend:
+    def test_suspend_success(self, manager):
+        manager._db.fetchrow.return_value = {"status": "active"}
+        result = manager.suspend("test-tenant", performed_by="admin", reason="testing")
+        assert result["status"] == "suspended"
+
+    def test_suspend_not_found(self, manager):
+        manager._db.fetchrow.return_value = None
+        with pytest.raises(ProvisioningError, match="not found"):
+            manager.suspend("nonexistent")
+
+
+class TestReactivate:
+    def test_reactivate_success(self, manager):
+        manager._db.fetchrow.return_value = {"status": "suspended"}
+        result = manager.reactivate("test-tenant", performed_by="admin")
+        assert result["status"] == "active"
+
+    def test_reactivate_not_found(self, manager):
+        manager._db.fetchrow.return_value = None
+        with pytest.raises(ProvisioningError, match="not found"):
+            manager.reactivate("nonexistent")
+
+
+class TestScheduleDelete:
+    def test_schedule_delete_success(self, manager):
+        manager._db.fetchrow.return_value = {"status": "active"}
+        result = manager.schedule_delete("test-tenant", performed_by="admin")
+        assert result["status"] == "deleting"
+
+    def test_schedule_delete_not_found(self, manager):
+        manager._db.fetchrow.return_value = None
+        with pytest.raises(ProvisioningError, match="not found"):
+            manager.schedule_delete("nonexistent")
+
+
+class TestGetStats:
+    def test_returns_stats(self, manager):
+        manager._db.fetchrow.return_value = {
+            "slug": "test-tenant", "usage_memories": 5, "usage_vault_bytes": 500,
+            "usage_gbrain_pages": 2, "quota_max_memories": 100, "quota_max_vault_bytes": 1000,
+            "quota_max_gbrain_pages": 10,
+        }
+        stats = manager.get_stats("test-tenant")
+        assert stats["slug"] == "test-tenant"
+        assert stats["usage"]["memories"] == 5
+        assert stats["limits"]["memories"]["percent"] == 5.0
+
+    def test_returns_none_when_not_found(self, manager):
+        manager._db.fetchrow.return_value = None
+        assert manager.get_stats("nonexistent") is None
+
+
+class TestGetAuditLog:
+    def test_returns_logs(self, manager):
+        manager._db.fetch.return_value = [
+            {"tenant_id": "t1", "action": "provisioned", "performed_by": "admin",
+             "metadata": "{}", "created_at": None, "id": 1},
+        ]
+        logs = manager.get_audit_log()
+        assert len(logs) == 1
+        assert logs[0]["action"] == "provisioned"
+
+    def test_returns_empty(self, manager):
+        manager._db.fetch.return_value = []
+        assert manager.get_audit_log() == []
+
+
+class TestUpdateStatusValidation:
+    def test_raises_on_invalid_status(self, manager):
+        with pytest.raises(ProvisioningError) as exc_info:
+            manager.update_status("test-tenant", "invalid_status")
+        assert exc_info.value.code == "INVALID_STATUS"
+
+
+class TestClose:
+    def test_close_calls_db_close(self, manager):
+        db_mock = MagicMock()
+        manager._db = db_mock
+        manager.close()
+        db_mock.close.assert_called_once()
+        assert manager._db is None
+
+    def test_close_no_db(self, manager):
+        manager._db = None
+        manager.close()  # should not raise

@@ -29,9 +29,13 @@ class _NeonLikeDB:
             return cur.fetchall()
 
     def execute(self, query: str, *params):
-        with self._conn.cursor() as cur:
-            cur.execute(query, params)
-        self._conn.commit()
+        try:
+            with self._conn.cursor() as cur:
+                cur.execute(query, params)
+            self._conn.commit()
+        except Exception:
+            self._conn.rollback()
+            raise
 
     def close(self):
         self._conn.close()
@@ -226,6 +230,8 @@ class TenantManager:
         return [dict(r) for r in rows], total
 
     def update_status(self, slug: str, new_status: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
+        if new_status not in {"suspended", "active", "deleting"}:
+            raise ProvisioningError("INVALID_STATUS", f"Invalid status '{new_status}'")
         db = self._get_db()
         row = db.fetchrow("SELECT status FROM tenants WHERE slug = %s", slug)
         if not row:
@@ -285,6 +291,20 @@ class TenantManager:
             "usage": {k: r[f"usage_{k}"] for k in ["memories", "vault_bytes", "gbrain_pages"]},
             "limits": limits,
         }
+
+    def suspend(self, slug: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
+        return self.update_status(slug, "suspended", performed_by, reason)
+
+    def reactivate(self, slug: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
+        return self.update_status(slug, "active", performed_by, reason)
+
+    def schedule_delete(self, slug: str, performed_by: Optional[str] = None, reason: str = "") -> dict:
+        return self.update_status(slug, "deleting", performed_by, reason)
+
+    def close(self):
+        if self._db is not None:
+            self._db.close()
+            self._db = None
 
     def get_audit_log(self, tenant_id: Optional[str] = None, action: Optional[str] = None, limit: int = 50) -> list[dict]:
         db = self._get_db()
