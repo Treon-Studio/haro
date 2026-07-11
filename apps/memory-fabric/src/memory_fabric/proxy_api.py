@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import traceback
+from time import time
 
 import httpx
 import uvicorn
@@ -15,6 +16,10 @@ from pydantic import BaseModel
 from memory_fabric.tenant_manager import TenantManager, ProvisioningError
 
 logger = logging.getLogger(__name__)
+
+_tenant_status_cache: dict[str, str] = {}
+_tenant_cache_ttl: dict[str, float] = {}
+CACHE_TTL_SECONDS = 300  # 5 minutes
 
 app = FastAPI(title="memory-fabric-proxy")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -35,6 +40,29 @@ def _resolve_fn(tool_name: str):
 
 @app.post("/api/tool")
 async def call_tool(req: ToolRequest):
+    args = req.args if isinstance(req.args, dict) else {}
+    tenant = args.get("tenant") or args.get("user_id", "").split("_")[0]
+
+    if tenant:
+        tm = get_tenant_manager()
+        cached = _tenant_status_cache.get(tenant)
+        if cached is None or (tenant in _tenant_cache_ttl and time() - _tenant_cache_ttl[tenant] > CACHE_TTL_SECONDS):
+            t = tm.get_tenant(tenant)
+            cached = t["status"] if t else "active"
+            _tenant_status_cache[tenant] = cached
+            _tenant_cache_ttl[tenant] = time()
+
+        if cached == "suspended":
+            return JSONResponse(
+                {
+                    "error": {
+                        "code": "TENANT_SUSPENDED",
+                        "message": f"Tenant '{tenant}' is suspended. Contact support to reactivate.",
+                    }
+                },
+                status_code=403,
+            )
+
     fn = _resolve_fn(req.tool)
     if fn is None:
         return {"error": f"Unknown tool: {req.tool}"}
@@ -169,6 +197,17 @@ async def list_tenants(request: Request):
         )
 
 
+@app.get("/api/tenants/audit-log")
+async def audit_log(request: Request):
+    require_auth(request)
+    tm = get_tenant_manager()
+    tenant_id = request.query_params.get("tenant_id")
+    action = request.query_params.get("action")
+    limit = int(request.query_params.get("limit", 50))
+    rows = tm.get_audit_log(tenant_id=tenant_id, action=action, limit=limit)
+    return JSONResponse({"success": True, "data": rows})
+
+
 @app.get("/api/tenants/{slug}")
 async def get_tenant(slug: str, request: Request):
     require_auth(request)
@@ -229,17 +268,6 @@ async def get_tenant_stats(slug: str, request: Request):
             status_code=404,
         )
     return JSONResponse({"success": True, "data": stats})
-
-
-@app.get("/api/tenants/audit-log")
-async def audit_log(request: Request):
-    require_auth(request)
-    tm = get_tenant_manager()
-    tenant_id = request.query_params.get("tenant_id")
-    action = request.query_params.get("action")
-    limit = int(request.query_params.get("limit", 50))
-    rows = tm.get_audit_log(tenant_id=tenant_id, action=action, limit=limit)
-    return JSONResponse({"success": True, "data": rows})
 
 
 def run():
