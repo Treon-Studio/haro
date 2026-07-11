@@ -54,6 +54,9 @@ export const POST: APIRoute = async (context) => {
     Effect.flatMap(signUpProgram),
     Effect.tap((data) =>
       Effect.tryPromise({
+        // signUpProgram returns { user, session } — no company info yet.
+        // Company creation happens in the auth repository layer (Supabase).
+        // Using user.id as company.id fallback until company extraction is added to the DTO.
         try: () => provisionTenant(
           { id: data.user.id, name: data.user.full_name || data.user.email },
           data.user.id,
