@@ -7,7 +7,7 @@ Notes for OpenCode (and other agents) working in this repository. Keep it short.
 A merged repo with two unrelated projects living side by side:
 
 - **Root + `apps/`, `packages/`** — pnpm + turbo monorepo powering **Tenang Web** (Astro 5 marketing site, ported from Next.js to Astro + Cloudflare Workers).
-- **`engine/`** — Haro, a Python voice assistant stack (FastAPI backend + openWakeWord + MiniMax STT/TTS + OpenRouter LLM + Vite/React kiosk webapp). See `engine/AGENTS.md` for haro-specific notes.
+- **`apps/haro-voice/`** — Haro, a Python voice assistant stack (FastAPI backend + openWakeWord + MiniMax STT/TTS + OpenRouter LLM + Vite/React kiosk webapp). See `apps/haro-voice/AGENTS.md` for haro-specific notes.
 
 The two projects do not share build tooling or imports. Treat them as separate codebases that happen to be in one git repo.
 
@@ -18,7 +18,7 @@ The two projects do not share build tooling or imports. Treat them as separate c
 | `apps/website` | `@treonstudio/website` | Astro 5 marketing site (the homepage, blocks, theme). The only deployable app. Deployed to Cloudflare Workers. |
 | `packages/core` | `@treonstudio/bungas-core` | Vite + React 19 component library. Source-of-truth for shared UI primitives, the `cn()` helper, and hooks. Not published. |
 | `packages/ts-config` | `@treonstudio/ts-config` | Shared `tsconfig` base. Consumers extend `@treonstudio/ts-config/base.json` (website) or `astro.json` (website). |
-| `engine/` | (no package) | Haro Python voice assistant — see `engine/AGENTS.md`. |
+| `apps/haro-voice/` | (no package) | Haro Python voice assistant — see `apps/haro-voice/AGENTS.md`. |
 
 The root `package.json` `name` is still `tailark` (upstream artifact); everything new is `@treonstudio/*`. Don't rename it casually — many build paths and tooling scripts rely on it.
 

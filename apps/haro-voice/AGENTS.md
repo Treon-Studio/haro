@@ -10,8 +10,8 @@ Stack: Python 3.11+ / FastAPI / React 18 + Vite / openWakeWord / MiniMax STT+TTS
 pm2 start ecosystem.config.js      # backend (uvicorn :8000), wakeword, webapp (:3000)
 
 # Or run individually
-cd backend && ../venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-cd wake_word_service && ../venv/bin/python main.py
+cd backend && ../../venv/bin/uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+cd wake_word_service && ../../venv/bin/python main.py
 cd webapp && npm run dev            # Vite on :3000
 
 # CI checks (run before pushing)
