@@ -3,6 +3,7 @@ import type { DocService } from '../services/doc-service';
 import type { SearchService } from '../services/search-service';
 import type { SyncService } from '../services/sync-service';
 import type { GraphService } from '../services/graph-service';
+import type { MemoryFabricService } from '../services/memory-fabric-service';
 import { DocumentNotFoundError } from '../utils/errors';
 
 const TOOL_LIST: McpToolDefinition[] = [
@@ -85,6 +86,200 @@ const TOOL_LIST: McpToolDefinition[] = [
       properties: {},
     },
   },
+  /* --- memory fabric tools (proxied to VPS) --- */
+  {
+    name: 'memory_store',
+    description: 'Store a memory in the mem0 memory layer. Messages are stored as conversation pairs and embedded for semantic retrieval.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        messages: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              role: { type: 'string', enum: ['user', 'assistant'] },
+              content: { type: 'string' },
+            },
+            required: ['role', 'content'],
+          },
+          description: 'List of message pairs',
+        },
+        user_id: { type: 'string', description: 'Scoping identifier' },
+        agent_id: { type: 'string', description: 'Agent identifier' },
+        metadata: { type: 'object', description: 'Optional metadata' },
+      },
+      required: ['messages'],
+    },
+  },
+  {
+    name: 'memory_search',
+    description: 'Search memories by semantic query.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Natural language query' },
+        user_id: { type: 'string', description: 'Scope filter' },
+        limit: { type: 'number', default: 10 },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'memory_list',
+    description: 'List all memories for a given scope.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        user_id: { type: 'string' },
+        agent_id: { type: 'string' },
+        run_id: { type: 'string' },
+        limit: { type: 'number', default: 50 },
+      },
+    },
+  },
+  {
+    name: 'memory_get',
+    description: 'Get a single memory by its id.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_id: { type: 'string', description: 'Memory ID' },
+      },
+      required: ['memory_id'],
+    },
+  },
+  {
+    name: 'memory_delete',
+    description: 'Delete a memory by its id.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        memory_id: { type: 'string', description: 'Memory ID' },
+      },
+      required: ['memory_id'],
+    },
+  },
+  {
+    name: 'gbrain_put',
+    description: 'Write or update a page in the gbrain knowledge graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        slug: { type: 'string', description: 'Unique page slug' },
+        content: { type: 'string', description: 'Page content (markdown)' },
+        tenant: { type: 'string', description: 'Tenant identifier' },
+        title: { type: 'string' },
+        type: { type: 'string', default: 'page' },
+      },
+      required: ['slug', 'content'],
+    },
+  },
+  {
+    name: 'gbrain_get',
+    description: 'Read a page from the gbrain knowledge graph by slug.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        slug: { type: 'string', description: 'Page slug' },
+        tenant: { type: 'string' },
+      },
+      required: ['slug'],
+    },
+  },
+  {
+    name: 'gbrain_search',
+    description: 'Keyword-search pages in the gbrain knowledge graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        query: { type: 'string', description: 'Search query' },
+        tenant: { type: 'string' },
+        limit: { type: 'number', default: 20 },
+      },
+      required: ['query'],
+    },
+  },
+  {
+    name: 'gbrain_query',
+    description: 'Hybrid semantic search across the gbrain knowledge graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        question: { type: 'string', description: 'Question to answer from knowledge' },
+        tenant: { type: 'string' },
+        limit: { type: 'number', default: 10 },
+      },
+      required: ['question'],
+    },
+  },
+  {
+    name: 'gbrain_list',
+    description: 'List pages in the gbrain knowledge graph.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        type: { type: 'string', description: 'Filter by page type' },
+        tag: { type: 'string' },
+        limit: { type: 'number', default: 50 },
+      },
+    },
+  },
+  {
+    name: 'gbrain_stats',
+    description: 'Get gbrain health and statistics.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        tenant: { type: 'string' },
+      },
+    },
+  },
+  {
+    name: 'vault_read',
+    description: 'Read a file from the tenant vault.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path in vault' },
+        tenant: { type: 'string', description: 'Tenant identifier' },
+      },
+      required: ['path', 'tenant'],
+    },
+  },
+  {
+    name: 'vault_write',
+    description: 'Write content to a file in the tenant vault.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', description: 'File path in vault' },
+        content: { type: 'string', description: 'File content' },
+        tenant: { type: 'string', description: 'Tenant identifier' },
+      },
+      required: ['path', 'content', 'tenant'],
+    },
+  },
+  {
+    name: 'vault_list',
+    description: 'List files and directories in a vault path.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        path: { type: 'string', default: '', description: 'Directory path in vault' },
+        tenant: { type: 'string', description: 'Tenant identifier' },
+      },
+      required: ['tenant'],
+    },
+  },
+  {
+    name: 'fabric_health',
+    description: 'Check connectivity to all memory fabric backends (mem0, gbrain, vault).',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 export function getToolDefinitions(): McpToolDefinition[] {
@@ -100,6 +295,7 @@ export interface ToolServices {
   searchService: SearchService;
   graphService: GraphService;
   syncService: SyncService;
+  memoryFabric?: MemoryFabricService;
 }
 
 export async function executeTool(
@@ -121,6 +317,23 @@ export async function executeTool(
         return handleListDocs(args, services);
       case 'okf_sync_status':
         return handleSyncStatus(services);
+      /* memory fabric tools */
+      case 'memory_store':
+      case 'memory_search':
+      case 'memory_list':
+      case 'memory_get':
+      case 'memory_delete':
+      case 'gbrain_put':
+      case 'gbrain_get':
+      case 'gbrain_search':
+      case 'gbrain_query':
+      case 'gbrain_list':
+      case 'gbrain_stats':
+      case 'vault_read':
+      case 'vault_write':
+      case 'vault_list':
+      case 'fabric_health':
+        return handleMemoryFabric(name, args, services);
       default:
         return {
           content: [{ type: 'text', text: `Unknown tool: ${name}` }],
@@ -301,6 +514,33 @@ async function handleListDocs(args: Record<string, unknown>, services: ToolServi
   }
 
   return { content: [{ type: 'text', text }] };
+}
+
+async function handleMemoryFabric(name: string, args: Record<string, unknown>, services: ToolServices): Promise<ToolCallResult> {
+  if (!services.memoryFabric) {
+    return {
+      content: [{ type: 'text', text: 'Memory Fabric not configured. Set MEMORY_FABRIC_URL environment variable.' }],
+      isError: true,
+    };
+  }
+
+  if (name === 'fabric_health') return services.memoryFabric.fabricHealth();
+  if (name === 'memory_store') return services.memoryFabric.memoryStore(args);
+  if (name === 'memory_search') return services.memoryFabric.memorySearch(args);
+  if (name === 'memory_list') return services.memoryFabric.memoryList(args);
+  if (name === 'memory_get') return services.memoryFabric.memoryGet(args);
+  if (name === 'memory_delete') return services.memoryFabric.memoryDelete(args);
+  if (name === 'gbrain_put') return services.memoryFabric.gbrainPut(args);
+  if (name === 'gbrain_get') return services.memoryFabric.gbrainGet(args);
+  if (name === 'gbrain_search') return services.memoryFabric.gbrainSearch(args);
+  if (name === 'gbrain_query') return services.memoryFabric.gbrainQuery(args);
+  if (name === 'gbrain_list') return services.memoryFabric.gbrainList(args);
+  if (name === 'gbrain_stats') return services.memoryFabric.gbrainStats(args);
+  if (name === 'vault_read') return services.memoryFabric.vaultRead(args);
+  if (name === 'vault_write') return services.memoryFabric.vaultWrite(args);
+  if (name === 'vault_list') return services.memoryFabric.vaultList(args);
+
+  return { content: [{ type: 'text', text: `Unknown memory fabric tool: ${name}` }], isError: true };
 }
 
 async function handleSyncStatus(services: ToolServices): Promise<ToolCallResult> {
