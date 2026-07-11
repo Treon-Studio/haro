@@ -6,27 +6,41 @@ from pathlib import Path
 from datetime import datetime, timezone
 from typing import Optional
 
+import psycopg2
+import psycopg2.extras
+
 logger = logging.getLogger("tenant_manager")
 
 SLUG_RE = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$")
 
 
+def _serialize(obj):
+    """Recursively convert datetime objects to ISO strings in dicts/lists."""
+    if isinstance(obj, dict):
+        return {k: _serialize(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_serialize(v) for v in obj]
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    return obj
+
+
 class _NeonLikeDB:
     """Thin wrapper to make psycopg2 look like Neon SDK (fetchrow/fetch/execute)."""
     def __init__(self, url: str):
-        import psycopg2
-        import psycopg2.extras
         self._conn = psycopg2.connect(url)
 
     def fetchrow(self, query: str, *params):
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(query, params)
-            return cur.fetchone()
+            row = cur.fetchone()
+            return _serialize(row) if row else None
 
     def fetch(self, query: str, *params):
         with self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(query, params)
-            return cur.fetchall()
+            rows = cur.fetchall()
+            return [_serialize(r) for r in rows]
 
     def execute(self, query: str, *params):
         try:
