@@ -1,0 +1,17 @@
+[project]
+name = "haro-memory-fabric"
+version = "1.0.0"
+description = "Memory Fabric — mem0, gbrain, and vault MCP server for Haro"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx",
+    "uvicorn",
+    "psycopg2-binary",
+]
+
+[project.scripts]
+memory-fabric = "memory_fabric.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
