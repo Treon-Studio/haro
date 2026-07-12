@@ -1,0 +1,19 @@
+; apps/memory-fabric/deploy/memory-fabric-proxy.service
+[Unit]
+Description=Memory Fabric Proxy API — REST wrapper for MCP tools
+After=network-online.target memory-fabric-mcp.service
+Wants=memory-fabric-mcp.service
+
+[Service]
+Type=simple
+ExecStart=/opt/memory-fabric-mcp-venv/bin/python -m memory_fabric.proxy_api
+User=root
+WorkingDirectory=/root/go-workspace/haro/apps/memory-fabric
+EnvironmentFile=/etc/memory-fabric-mcp/env
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
