@@ -2,6 +2,7 @@
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import { MemoryList } from '@/../blocks/dashboard/memory-list'
 import { MemoryGraph } from '@/../blocks/dashboard/memory-graph'
+import VaultBrowser from '@/../blocks/dashboard/vault-browser'
 
 export const prerender = false
 
@@ -60,9 +61,7 @@ if (token) {
       <section id="vault">
         <h2 class="text-2xl font-bold text-foreground mb-1">Vault</h2>
         <p class="text-sm text-text-secondary mb-4">Uploaded files and their metadata.</p>
-        <div class="rounded-lg border border-border bg-card p-8 text-center text-text-tertiary">
-          Vault file browser coming soon.
-        </div>
+        <VaultBrowser tenant="default" client:load />
       </section>
     </main>
   </div>
