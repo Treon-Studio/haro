@@ -387,25 +387,43 @@ def _webdav_xml_multistatus(responses: list[tuple[str, int, dict]]) -> str:
     return "".join(parts)
 
 
-@app.api_route("/vault/{tenant}/{path:path}", methods=["GET", "PUT", "DELETE", "PROPFIND", "MKCOL", "MOVE", "COPY"])
+_WEBDAV_METHODS = ["GET", "PUT", "DELETE", "PROPFIND", "MKCOL", "MOVE", "COPY", "OPTIONS"]
+
+
+@app.api_route("/vault/{tenant}/{path:path}", methods=_WEBDAV_METHODS)
 async def webdav_handler(tenant: str, path: str, request: Request):
     _webdav_auth(request)
     base = Path(os.environ.get("VAULT_ROOT", "/srv/vault-write")) / tenant
     target = _webdav_path(tenant, path)
 
+    if request.method == "OPTIONS":
+        return Response(headers={
+            "DAV": "1",
+            "Allow": ", ".join(_WEBDAV_METHODS),
+            "Content-Length": "0",
+        })
+
     if request.method == "PROPFIND":
         depth = request.headers.get("Depth", "1")
+        if not target.exists() and depth == "0":
+            raise HTTPException(status_code=404, detail="Not found")
         paths = [target]
         if depth != "0" and target.is_dir():
+            if not target.exists():
+                raise HTTPException(status_code=404, detail="Not found")
             paths = [target] + sorted(target.iterdir(), key=lambda p: (not p.is_dir(), p.name))
         responses = []
         for p in paths:
+            try:
+                st = p.stat()
+            except FileNotFoundError:
+                continue
             rel = f"/vault/{tenant}/{p.relative_to(base)}"
             if p.is_dir():
                 rel += "/"
             is_dir = p.is_dir()
-            size = p.stat().st_size if p.is_file() else 0
-            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            size = st.st_size if p.is_file() else 0
+            mtime = datetime.fromtimestamp(st.st_mtime, tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
             props = {
                 "displayname": p.name,
                 "resourcetype": "<D:collection/>" if is_dir else "",
@@ -448,13 +466,23 @@ async def webdav_handler(tenant: str, path: str, request: Request):
         target.mkdir(parents=True, exist_ok=True)
         return Response(status_code=201)
 
-    if request.method == "MOVE":
+    if request.method in ("MOVE", "COPY"):
         dest = request.headers.get("Destination", "")
         if not dest:
             raise HTTPException(status_code=400, detail="Destination header required")
-        dest_path = _webdav_path(tenant, dest.replace(f"/vault/{tenant}/", ""))
+        from urllib.parse import urlparse
+        dest_path_only = urlparse(dest).path
+        rel = dest_path_only.replace(f"/vault/{tenant}/", "", 1)
+        dest_path = _webdav_path(tenant, rel)
         dest_path.parent.mkdir(parents=True, exist_ok=True)
-        target.rename(dest_path)
+        if request.method == "MOVE":
+            target.rename(dest_path)
+        else:
+            import shutil
+            if target.is_file():
+                shutil.copy2(target, dest_path)
+            else:
+                shutil.copytree(target, dest_path)
         return Response(status_code=204)
 
     raise HTTPException(status_code=405, detail="Method not allowed")
