@@ -35,6 +35,65 @@ pnpm lint
 pnpm test
 ```
 
+## Konfigurasi
+
+### Environment Variables (`/etc/memory-fabric-mcp/env`)
+
+| Variable | Contoh | Fungsi |
+|----------|--------|--------|
+| `MEM0_API_URL` | `http://127.0.0.1:7000` | Endpoint mem0 memory service |
+| `GBRAIN_BIN` | `/root/.bun/bin/gbrain` | Path binary gbrain CLI |
+| `VAULT_ROOT` | `/srv/vault-write` | Root direktori vault file storage |
+| `NEON_DATABASE_URL` | `postgresql://...` | Koneksi ke Neon PostgreSQL |
+| `MANAGEMENT_API_KEY` | `35sBJH5...` | API key untuk auth proxy & WebDAV |
+| `PROXY_PORT` | `8771` | Port REST API proxy |
+| `BIND_HOST` / `BIND_PORT` | `127.0.0.1:8770` | Bind MCP server |
+
+### Caddy (`/etc/caddy/Caddyfile`)
+
+```
+:8080 {
+    handle_path /fabric/* { reverse_proxy 127.0.0.1:8770 }  # MCP server
+    handle /api/*      { reverse_proxy 127.0.0.1:8771 }  # REST API
+    handle /vault/*    { reverse_proxy 127.0.0.1:8771 }  # WebDAV
+    handle             { reverse_proxy 127.0.0.1:8765 }  # Default (Ara)
+}
+```
+
+### Systemd Services
+
+| Service | Port | Fungsi |
+|---------|------|--------|
+| `memory-fabric-mcp` | 8770 | MCP server (mem0, gbrain, vault tools) |
+| `memory-fabric-proxy` | 8771 | REST API proxy + WebDAV |
+| `tenant-cleanup.timer` | — | Hapus tenant soft-deleted (30 hari) |
+| `resource-snapshot.timer` | — | Snapshot usage harian |
+| `fabric-monitor.timer` | — | Health check periodik |
+
+### Website (`apps/website/.env.local`)
+
+```
+MANAGEMENT_API_KEY=...   # Sama dengan di env proxy
+PUBLIC_SUPABASE_URL=...
+PUBLIC_SUPABASE_ANON_KEY=...
+```
+
+### Cloudflare Worker (`haro-web`)
+
+```
+wrangler secret put MANAGEMENT_API_KEY --name haro-web
+wrangler secret put SUPABASE_URL --name haro-web
+wrangler secret put SUPABASE_SERVICE_ROLE_KEY --name haro-web
+```
+
+### Obsidian (3 Plugin)
+
+| Plugin | Konfigurasi |
+|--------|-------------|
+| **Local REST API** | Settings → API Key → copy, pake buat MCP client |
+| **Remotely Save** | WebDAV → URL: `https://haro-proxy.treonstudio.com/vault/{tenant}/` → Auth: Basic (password = MANAGEMENT_API_KEY) |
+| **Dataview** | Opsional — query metadata notes pake SQL-like |
+
 ## Deployed Services
 
 | Service | URL | Description |
