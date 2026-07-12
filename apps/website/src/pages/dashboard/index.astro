@@ -3,26 +3,18 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import { MemoryList } from '@/../blocks/dashboard/memory-list'
 import { MemoryGraph } from '@/../blocks/dashboard/memory-graph'
 import VaultBrowser from '@/../blocks/dashboard/vault-browser'
+import { verifySession } from '@/lib/auth/session'
 
 export const prerender = false
 
-const token = import.meta.env.DASHBOARD_TOKEN
-if (!token) {
+const cookieHeader = Astro.request.headers.get('cookie') || ''
+const sessionCookie = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith('tenang-session='))?.split('=')[1]
+const session = sessionCookie ? await verifySession(sessionCookie) : null
+if (!session) {
   return Astro.redirect('/login')
 }
-if (token) {
-  const cookieToken = Astro.request.headers.get('cookie')
-    ?.split(';')
-    .map(c => c.trim())
-    .find(c => c.startsWith('dashboard_token='))
-    ?.split('=')[1]
-
-  const headerToken = Astro.request.headers.get('x-dashboard-token')
-
-  if (cookieToken !== token && headerToken !== token) {
-    return Astro.redirect('/login')
-  }
-}
+const tenant = "default"
+const isAdmin = session.role === 'admin'
 ---
 
 <BaseLayout title="Memory Explorer - Dashboard" description="Memory Explorer Dashboard">
@@ -39,9 +31,11 @@ if (token) {
         <a href="#vault" class="px-3 py-2 rounded-md text-sm text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors">
           Vault
         </a>
-        <a href="/dashboard/admin/tenants" class="px-3 py-2 rounded-md text-sm text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors">
-          Admin
-        </a>
+        {isAdmin && (
+          <a href="/dashboard/admin/tenants" class="px-3 py-2 rounded-md text-sm text-text-secondary hover:text-foreground hover:bg-surface-hover transition-colors">
+            Admin
+          </a>
+        )}
       </nav>
     </aside>
 
@@ -49,19 +43,19 @@ if (token) {
       <section id="memories">
         <h2 class="text-2xl font-bold text-foreground mb-1">Memories</h2>
         <p class="text-sm text-text-secondary mb-4">Browse, search, and manage stored memory entries.</p>
-        <MemoryList client:load />
+        <MemoryList tenant={tenant} client:load />
       </section>
 
       <section id="graph">
         <h2 class="text-2xl font-bold text-foreground mb-1">Knowledge Graph</h2>
         <p class="text-sm text-text-secondary mb-4">Interactive visualization of gbrain pages and their relationships.</p>
-        <MemoryGraph client:load />
+        <MemoryGraph tenant={tenant} client:load />
       </section>
 
       <section id="vault">
         <h2 class="text-2xl font-bold text-foreground mb-1">Vault</h2>
         <p class="text-sm text-text-secondary mb-4">Uploaded files and their metadata.</p>
-        <VaultBrowser tenant="default" client:load />
+        <VaultBrowser tenant={tenant} client:load />
       </section>
     </main>
   </div>

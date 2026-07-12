@@ -1,21 +1,15 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro'
 import TenantList from '@/../blocks/dashboard/admin/tenant-list'
+import { verifySession } from '@/lib/auth/session'
 
 export const prerender = false
 
-// Auth gate — redirect if not admin
-const token = import.meta.env.DASHBOARD_TOKEN
-if (!token) {
+const cookieHeader = Astro.request.headers.get('cookie') || ''
+const sessionCookie = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith('tenang-session='))?.split('=')[1]
+const session = sessionCookie ? await verifySession(sessionCookie) : null
+if (!session || session.role !== 'admin') {
   return Astro.redirect('/login')
-}
-if (token) {
-  const cookieToken = Astro.request.headers.get('cookie')
-    ?.split(';').map(c => c.trim()).find(c => c.startsWith('dashboard_token='))?.split('=')[1]
-  const headerToken = Astro.request.headers.get('x-dashboard-token')
-  if (cookieToken !== token && headerToken !== token) {
-    return Astro.redirect('/login')
-  }
 }
 ---
 
