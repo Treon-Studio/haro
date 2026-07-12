@@ -42,7 +42,7 @@ _QUOTA_RESOURCE_MAP = {
 app = FastAPI(title="memory-fabric-proxy")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.environ.get("PROXY_ALLOWED_ORIGINS", "").split(",") or [],
+    allow_origins=[o.strip() for o in os.environ.get("PROXY_ALLOWED_ORIGINS", "").split(",") if o.strip()],
     allow_methods=["*"],
     allow_headers=["*"],
 )
