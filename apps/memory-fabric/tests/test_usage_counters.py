@@ -1,7 +1,10 @@
+import os
 import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from httpx import AsyncClient, ASGITransport
 from memory_fabric.proxy_api import app
+
+os.environ.setdefault("MANAGEMENT_API_KEY", "test-key")
 
 
 @pytest.fixture
@@ -24,6 +27,7 @@ async def test_usage_incremented_after_memory_store(client):
         resp = await client.post(
             "/api/tool",
             json={"tool": "memory_store", "args": {"tenant": "test-tenant", "content": "hello"}},
+            headers={"Authorization": "Bearer test-key"},
         )
 
     assert resp.status_code == 200

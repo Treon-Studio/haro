@@ -57,3 +57,14 @@ async def test_suspend_tenant(client):
         )
     assert resp.status_code == 200
     assert resp.json()["data"]["status"] == "suspended"
+
+
+@pytest.mark.anyio
+async def test_call_tool_requires_auth(client):
+    """Unauthenticated POST to /api/tool must return 401."""
+    # Don't need to mock anything - should fail at auth check before hitting DB
+    resp = await client.post(
+        "/api/tool",
+        json={"tool": "memory_search", "args": {"tenant": "test"}},
+    )
+    assert resp.status_code == 401

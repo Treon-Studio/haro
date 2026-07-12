@@ -40,7 +40,12 @@ _QUOTA_RESOURCE_MAP = {
 }
 
 app = FastAPI(title="memory-fabric-proxy")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.environ.get("PROXY_ALLOWED_ORIGINS", "").split(",") or [],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ToolRequest(BaseModel):
@@ -79,7 +84,8 @@ def check_quota(tenant: str, tool: str) -> None:
 
 
 @app.post("/api/tool")
-async def call_tool(req: ToolRequest):
+async def call_tool(req: ToolRequest, request: Request):
+    require_auth(request)
     args = req.args if isinstance(req.args, dict) else {}
     tenant = args.get("tenant") or args.get("user_id", "").split("_")[0]
 
