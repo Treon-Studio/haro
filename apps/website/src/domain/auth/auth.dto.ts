@@ -18,4 +18,6 @@ export const toAuthDto = (result: TAuthResult): TAuthDto => ({
     expires_at: result.session.expiresAt,
     created_at: result.session.createdAt,
   },
+  company_id: result.companyId,
+  company_name: result.companyName,
 })
