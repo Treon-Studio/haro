@@ -172,13 +172,29 @@ Contoh konek dari Claude Desktop / OpenCode:
 
 #### Via WebDAV (Remotely Save)
 
-Install [Remotely Save](https://community.obsidian.md/plugins/remotely-save) dari Community Plugins. Konfigurasi:
+Sync Obsidian vault langsung ke Haro vault. Install [Remotely Save](https://community.obsidian.md/plugins/remotely-save) dari Community Plugins, lalu konfigurasi:
 
 ```
 Plugin: Remotely Save
   → Remote type: WebDAV
-  → URL: https://haro-proxy.treonstudio.com/vault/
-  → Auth: Basic (username + MANAGEMENT_API_KEY)
+  → URL: https://haro-proxy.treonstudio.com/vault/{tenant}/
+  → Auth: Basic
+      Username: (isi bebas, misal "user")
+      Password: (MANAGEMENT_API_KEY)
+```
+
+Remotely Save otomatis buat subfolder sesuai nama vault Obsidian lo. Contoh: kalo vault lo bernama `second-brain`, file bakal tersimpan di `/srv/vault-write/{tenant}/second-brain/`.
+
+**Test koneksi:**
+```bash
+# PROPFIND (list files)
+curl -X PROPFIND "https://haro-proxy.treonstudio.com/vault/{tenant}/" \
+  -H "Authorization: Basic $(echo -n 'user:MANAGEMENT_API_KEY' | base64)" \
+  -H "Depth: 1"
+
+# OPTIONS (cek WebDAV capability)
+curl -X OPTIONS "https://haro-proxy.treonstudio.com/vault/{tenant}/" \
+  -H "Authorization: Basic $(echo -n 'user:MANAGEMENT_API_KEY' | base64)"
 ```
 
 #### Via Vault REST API (Custom Sync)
