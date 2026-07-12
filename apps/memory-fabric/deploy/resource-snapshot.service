@@ -1,0 +1,10 @@
+; apps/memory-fabric/deploy/resource-snapshot.service
+[Unit]
+Description=Resource usage snapshot — daily tenant usage for billing
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/memory-fabric-mcp-venv/bin/python /root/go-workspace/haro/apps/memory-fabric/scripts/resource-snapshot.py
+User=root
+EnvironmentFile=/etc/memory-fabric-mcp/env
