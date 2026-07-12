@@ -9,7 +9,7 @@ conversational AI, mental wellness, voice assistance, and LLM tooling.
 |------|---------|-------------|
 | `apps/website` | `@treonstudio/website` | **Tenang** — AI mental wellness web app (Astro 5 + React 19, Cloudflare Workers) |
 | `apps/haro-voice` | — | **Ara** — Python voice assistant (openWakeWord, MiniMax STT/TTS, OpenRouter LLM, FastAPI) |
-| `apps/memory-fabric` | — | Python MCP server for mem0 (memory), gbrain (knowledge graph), vault (file storage), tenant management |
+| `apps/memory-fabric` | — | Python MCP server for mem0 (memory), gbrain (knowledge graph), vault (file storage), tenant management, usage counters, quota enforcement, resource snapshots |
 | `apps/haro-gateway` | `@treonstudio/gateway` | AI proxy gateway — routes to 250+ LLMs with fallbacks, caching, guardrails (based on Portkey AI Gateway) |
 | `apps/mcp` | `@treonstudio/mcp` | "OKF" MCP Server for knowledge graph navigation |
 | `packages/core` | `@treonstudio/bungas-core` | Shared React 19 UI primitives (shadcn), hooks, utils |
@@ -34,6 +34,14 @@ pnpm lint
 # Run tests
 pnpm test
 ```
+
+## Deployed Services
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Tenang website | [haro-web.treonstudio.workers.dev](https://haro-web.treonstudio.workers.dev) | Astro 5 marketing site + admin dashboard (Cloudflare Workers) |
+| Memory Fabric proxy | `haro-proxy.treonstudio.com` | REST API for MCP tools + tenant management (Caddy → systemd, port 8771) |
+| Admin dashboard | `/dashboard/admin/tenants` | Tenant management UI with memory browser, knowledge graph, vault, activity log |
 
 ## Per-Project Docs
 
