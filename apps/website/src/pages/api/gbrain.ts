@@ -1,12 +1,13 @@
 import type { APIRoute } from "astro"
-import { listGbrainPages } from "@/lib/neon"
+import { callMemoryTool } from "@/lib/memory-fabric"
 
 export const prerender = false
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ url }) => {
   try {
-    const pages = await listGbrainPages()
-    return new Response(JSON.stringify({ success: true, data: pages }), {
+    const tenant = url.searchParams.get("tenant") || "default"
+    const result = await callMemoryTool("gbrain_list", { tenant })
+    return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })
