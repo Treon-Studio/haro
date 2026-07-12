@@ -24,6 +24,7 @@ export function MemoryList() {
   const [search, setSearch] = useState("")
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [selectedMemory, setSelectedMemory] = useState<Memory | null>(null)
   const limit = 20
 
   const fetchMemories = useCallback(async (q: string, off: number) => {
@@ -105,14 +106,14 @@ export function MemoryList() {
               </tr>
             ) : (
               memories.map((mem) => (
-                <tr key={mem.id} class="border-t border-border hover:bg-surface-hover transition-colors">
+                <tr key={mem.id} class="border-t border-border hover:bg-surface-hover transition-colors cursor-pointer" onClick={() => setSelectedMemory(mem)}>
                   <td class="px-4 py-3 font-mono text-xs text-text-secondary">{mem.id.slice(0, 8)}...</td>
                   <td class="px-4 py-3 text-text-secondary">{mem.user_id}</td>
                   <td class="px-4 py-3 text-foreground">{snippet(mem)}</td>
                   <td class="px-4 py-3 text-text-secondary text-xs">{new Date(mem.created_at).toLocaleDateString()}</td>
                   <td class="px-4 py-3">
                     <button
-                      onClick={() => handleDelete(mem.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(mem.id) }}
                       class="p-1.5 rounded-md text-destructive hover:bg-destructive/10 transition-colors"
                       title="Delete memory"
                     >
@@ -125,6 +126,47 @@ export function MemoryList() {
           </tbody>
         </table>
       </div>
+
+      {selectedMemory && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50" onClick={() => setSelectedMemory(null)}>
+          <div className="bg-card rounded-xl border border-border p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-bold">Memory Detail</h3>
+                <p className="text-xs text-text-secondary font-mono">{selectedMemory.id}</p>
+              </div>
+              <button onClick={() => setSelectedMemory(null)} className="text-text-secondary hover:text-foreground">&times;</button>
+            </div>
+            <div className="space-y-3 text-sm">
+              <div>
+                <span className="text-text-secondary">User:</span> {selectedMemory.user_id}
+              </div>
+              <div>
+                <span className="text-text-secondary">Agent:</span> {selectedMemory.agent_id}
+              </div>
+              <div>
+                <span className="text-text-secondary">Created:</span> {new Date(selectedMemory.created_at).toLocaleString()}
+              </div>
+              <div>
+                <span className="text-text-secondary">Messages:</span>
+                <pre className="mt-1 p-3 bg-surface-hover rounded-lg text-xs overflow-x-auto whitespace-pre-wrap max-h-64">
+                  {typeof selectedMemory.messages === "string"
+                    ? selectedMemory.messages
+                    : JSON.stringify(selectedMemory.messages, null, 2)}
+                </pre>
+              </div>
+              {selectedMemory.metadata && (
+                <div>
+                  <span className="text-text-secondary">Metadata:</span>
+                  <pre className="mt-1 p-3 bg-surface-hover rounded-lg text-xs overflow-x-auto">
+                    {JSON.stringify(selectedMemory.metadata, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {totalPages > 1 && (
         <div class="flex items-center justify-between text-sm text-text-secondary">
