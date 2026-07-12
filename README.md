@@ -140,32 +140,39 @@ Add to your MCP client config:
 
 ### Obsidian
 
-#### Via MCP Tools Plugin
+Plugin yg perlu diinstall:
 
-Install [MCP Tools](https://github.com/Quorafind/obsidian-mcp-tools) from Obsidian Community Plugins. Add to its config:
+| Plugin | Link | Fungsi |
+|--------|------|--------|
+| **Local REST API** | [community.obsidian.md/plugins/obsidian-local-rest-api](https://community.obsidian.md/plugins/obsidian-local-rest-api) — by coddingtonbear | MCP server bawaan — baca/tulis/search notes, query tags, execute commands. **Wajib** |
+| **Remotely Save** | [community.obsidian.md/plugins/remotely-save](https://community.obsidian.md/plugins/remotely-save) — by fyears | Sync vault ke WebDAV (Haro vault) |
+| **Dataview** (opsional) | [community.obsidian.md/plugins/dataview](https://community.obsidian.md/plugins/dataview) | Query metadata notes pake SQL-like |
+
+#### Setup Local REST API + MCP
+
+1. Install **Local REST API** dari Community Plugins → [obsidian-local-rest-api](https://github.com/coddingtonbear/obsidian-local-rest-api)
+2. Settings → Local REST API → copy API key
+3. Hubungkan MCP client ke `https://127.0.0.1:27124/mcp/` pake API key tsb
+
+Contoh konek dari Claude Desktop / OpenCode:
 
 ```json
 {
   "mcpServers": {
-    "memory-fabric": {
-      "command": "python",
-      "args": ["-m", "memory_fabric.server"],
+    "obsidian": {
+      "command": "uvx",
+      "args": ["mcp-obsidian"],
       "env": {
-        "MEM0_API_KEY": "...",
-        "GBRAIN_API_KEY": "...",
-        "VAULT_PATH": "/srv/vault-write",
-        "NEON_DATABASE_URL": "..."
+        "OBSIDIAN_API_KEY": "api-key-dari-plugin"
       }
     }
   }
 }
 ```
 
-Then use MCP tools from Obsidian: search memories, query knowledge graph, read/write vault files.
+#### Via WebDAV (Remotely Save)
 
-### Via WebDAV (Obsidian Live Sync, Remotely Save)
-
-Mount the vault directory as a WebDAV share using a reverse proxy (e.g., Caddy with `webdav` handler). Then configure [Remotely Save](https://github.com/remotely-save/remotely-save) in Obsidian:
+Install [Remotely Save](https://community.obsidian.md/plugins/remotely-save) dari Community Plugins. Konfigurasi:
 
 ```
 Plugin: Remotely Save
@@ -174,7 +181,7 @@ Plugin: Remotely Save
   → Auth: Basic (username + MANAGEMENT_API_KEY)
 ```
 
-### Via Vault REST API (Custom Sync)
+#### Via Vault REST API (Custom Sync)
 
 Upload/download files programmatically:
 
