@@ -1,14 +1,27 @@
 import type { APIRoute } from "astro"
-import { listMemories, deleteMemory } from "@/lib/neon"
+import { callMemoryTool } from "@/lib/memory-fabric"
 
 export const prerender = false
 
+function getTenantFromRequest(request: Request): string {
+  const url = new URL(request.url)
+  return url.searchParams.get("tenant") || "default"
+}
+
 export const GET: APIRoute = async ({ url }) => {
   try {
+    const tenant = url.searchParams.get("tenant") || "default"
     const search = url.searchParams.get("search") || undefined
     const limit = parseInt(url.searchParams.get("limit") || "20", 10)
     const offset = parseInt(url.searchParams.get("offset") || "0", 10)
-    const result = await listMemories(search, limit, offset)
+
+    const result = await callMemoryTool("memory_search", {
+      tenant,
+      query: search || "",
+      limit,
+      offset,
+    })
+
     return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
@@ -25,14 +38,15 @@ export const GET: APIRoute = async ({ url }) => {
 export const DELETE: APIRoute = async ({ url }) => {
   try {
     const id = url.searchParams.get("id")
+    const tenant = url.searchParams.get("tenant") || "default"
     if (!id) {
       return new Response(JSON.stringify({ success: false, error: "Missing id parameter" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       })
     }
-    await deleteMemory(id)
-    return new Response(JSON.stringify({ success: true }), {
+    const result = await callMemoryTool("memory_delete", { tenant, memory_id: id })
+    return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })
