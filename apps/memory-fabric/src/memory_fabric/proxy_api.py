@@ -30,6 +30,12 @@ _TOOL_RESOURCE_MAP = {
     "gbrain_delete": ("gbrain_pages", -1),
 }
 
+_QUOTA_RESOURCE_MAP = {
+    "memory_store": ("usage_memories", "quota_max_memories"),
+    "gbrain_put": ("usage_gbrain_pages", "quota_max_gbrain_pages"),
+    "vault_write": ("usage_vault_bytes", "quota_max_vault_bytes"),
+}
+
 app = FastAPI(title="memory-fabric-proxy")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -45,6 +51,28 @@ def _resolve_fn(tool_name: str):
     if fn is None or not callable(fn):
         return None
     return fn
+
+
+def check_quota(tenant: str, tool: str) -> None:
+    """Raise HTTPException if tenant has exceeded quota for this tool."""
+    quota_key = _QUOTA_RESOURCE_MAP.get(tool)
+    if not quota_key:
+        return
+    usage_col, quota_col = quota_key
+    tm = get_tenant_manager()
+    t = tm.get_tenant(tenant)
+    if not t:
+        return
+    usage = t.get(usage_col, 0)
+    quota = t.get(quota_col, 0)
+    if quota > 0 and usage >= quota:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "code": "QUOTA_EXCEEDED",
+                "message": f"Tenant '{tenant}' has exceeded {usage_col.replace('_', ' ')} quota ({usage}/{quota})",
+            },
+        )
 
 
 @app.post("/api/tool")
@@ -69,6 +97,15 @@ async def call_tool(req: ToolRequest):
                         "message": f"Tenant '{tenant}' is {cached}. Contact support for assistance.",
                     }
                 },
+                status_code=403,
+            )
+
+    if tenant:
+        try:
+            check_quota(tenant, req.tool)
+        except HTTPException as e:
+            return JSONResponse(
+                {"error": {"code": "QUOTA_EXCEEDED", "message": e.detail["message"]}},
                 status_code=403,
             )
 
