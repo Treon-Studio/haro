@@ -21,6 +21,15 @@ _tenant_status_cache: dict[str, str] = {}
 _tenant_cache_ttl: dict[str, float] = {}
 CACHE_TTL_SECONDS = 300  # 5 minutes
 
+_TOOL_RESOURCE_MAP = {
+    "memory_store": ("memories", 1),
+    "memory_delete": ("memories", -1),
+    "vault_write": ("vault_bytes", None),
+    "vault_delete": ("vault_bytes", None),
+    "gbrain_put": ("gbrain_pages", 1),
+    "gbrain_delete": ("gbrain_pages", -1),
+}
+
 app = FastAPI(title="memory-fabric-proxy")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -68,6 +77,17 @@ async def call_tool(req: ToolRequest):
         return {"error": f"Unknown tool: {req.tool}"}
     try:
         result = await fn(**req.args) if __import__("inspect").iscoroutinefunction(fn) else fn(**req.args)
+
+        # Increment usage counter after successful tool call
+        if tenant and req.tool in _TOOL_RESOURCE_MAP:
+            resource, amount = _TOOL_RESOURCE_MAP[req.tool]
+            if amount is not None:
+                try:
+                    tm = get_tenant_manager()
+                    tm.increment_usage(tenant, resource, amount)
+                except Exception:
+                    logger.warning("Failed to increment usage for %s/%s", tenant, resource)
+
         return {"result": result}
     except Exception as e:
         logger.error("Tool %s failed: %s\n%s", req.tool, e, traceback.format_exc())

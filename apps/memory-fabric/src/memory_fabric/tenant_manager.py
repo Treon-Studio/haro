@@ -351,3 +351,12 @@ class TenantManager:
             *params, limit,
         )
         return [dict(r) for r in rows]
+
+    def increment_usage(self, slug: str, resource: str, amount: int = 1):
+        """Increment a usage counter for a tenant."""
+        allowed = {"memories": "usage_memories", "vault_bytes": "usage_vault_bytes", "gbrain_pages": "usage_gbrain_pages"}
+        col = allowed.get(resource)
+        if not col:
+            raise ProvisioningError("INVALID_RESOURCE", f"Unknown resource: {resource}")
+        db = self._get_db()
+        db.execute(f"UPDATE tenants SET {col} = {col} + %s WHERE slug = %s", amount, slug)
