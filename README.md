@@ -138,6 +138,62 @@ Add to your MCP client config:
 }
 ```
 
+### Obsidian
+
+#### Via MCP Tools Plugin
+
+Install [MCP Tools](https://github.com/Quorafind/obsidian-mcp-tools) from Obsidian Community Plugins. Add to its config:
+
+```json
+{
+  "mcpServers": {
+    "memory-fabric": {
+      "command": "python",
+      "args": ["-m", "memory_fabric.server"],
+      "env": {
+        "MEM0_API_KEY": "...",
+        "GBRAIN_API_KEY": "...",
+        "VAULT_PATH": "/srv/vault-write",
+        "NEON_DATABASE_URL": "..."
+      }
+    }
+  }
+}
+```
+
+Then use MCP tools from Obsidian: search memories, query knowledge graph, read/write vault files.
+
+### Via WebDAV (Obsidian Live Sync, Remotely Save)
+
+Mount the vault directory as a WebDAV share using a reverse proxy (e.g., Caddy with `webdav` handler). Then configure [Remotely Save](https://github.com/remotely-save/remotely-save) in Obsidian:
+
+```
+Plugin: Remotely Save
+  → Remote type: WebDAV
+  → URL: https://haro-proxy.treonstudio.com/vault/
+  → Auth: Basic (username + MANAGEMENT_API_KEY)
+```
+
+### Via Vault REST API (Custom Sync)
+
+Upload/download files programmatically:
+
+```bash
+# List files in vault
+curl -H "Authorization: Bearer $MF_KEY" \
+  https://haro-proxy.treonstudio.com/api/tenants/my-tenant/vault?prefix=notes/
+
+# Download a file
+curl -H "Authorization: Bearer $MF_KEY" \
+  https://haro-proxy.treonstudio.com/api/tenants/my-tenant/vault/notes/daily.md \
+  -o daily.md
+
+# Upload a file
+curl -X PUT https://haro-proxy.treonstudio.com/api/tenants/my-tenant/vault/notes/daily.md \
+  -H "Authorization: Bearer $MF_KEY" \
+  -H "Content-Type: text/markdown" \
+  -d "$(cat daily.md)"
+```
 
 
 - `apps/website/` — [Tenang website](apps/website/README.md)
