@@ -352,3 +352,6 @@ class _CustomEncoder(json.JSONEncoder):
             return super().default(obj)
         except TypeError:
             return str(obj)
+
+if __name__ == "__main__":
+    run()
