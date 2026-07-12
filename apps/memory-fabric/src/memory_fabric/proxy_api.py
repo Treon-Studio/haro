@@ -4,13 +4,16 @@ import json
 import logging
 import os
 import traceback
+from datetime import datetime, timezone
+from pathlib import Path
 from time import time
+from urllib.parse import unquote
 
 import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 
 from memory_fabric.tenant_manager import TenantManager, ProvisioningError
@@ -336,6 +339,115 @@ async def schedule_delete(slug: str, request: Request):
         return JSONResponse({"success": True, "data": result})
     except ProvisioningError as e:
         return JSONResponse(format_tenant_error(e), status_code=404 if e.code == "NOT_FOUND" else 400)
+
+
+# ── WebDAV ──────────────────────────────────────────────────────────────
+
+
+def _webdav_path(tenant: str, path: str) -> Path:
+    """Resolve WebDAV path, prevent traversal."""
+    base = Path(os.environ.get("VAULT_ROOT", "/srv/vault-write")) / tenant
+    clean = unquote(path.lstrip("/"))
+    full = (base / clean).resolve()
+    if not str(full).startswith(str(base.resolve())):
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return full
+
+
+def _webdav_auth(request: Request) -> None:
+    api_key = os.environ.get("MANAGEMENT_API_KEY", "")
+    if not api_key:
+        return
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {api_key}":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+def _webdav_xml_multistatus(responses: list[tuple[str, int, dict]]) -> str:
+    parts = ['<?xml version="1.0" encoding="utf-8"?><D:multistatus xmlns:D="DAV:">']
+    for href, status_code, props in responses:
+        parts.append(f"<D:response><D:href>{href}</D:href><D:status>HTTP/1.1 {status_code}</D:status>")
+        if props:
+            parts.append("<D:propstat><D:prop>")
+            for k, v in props.items():
+                parts.append(f"<D:{k}>{v}</D:{k}>")
+            parts.append("</D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat>")
+        parts.append("</D:response>")
+    parts.append("</D:multistatus>")
+    return "".join(parts)
+
+
+@app.api_route("/vault/{tenant}/{path:path}", methods=["GET", "PUT", "DELETE", "PROPFIND", "MKCOL", "MOVE", "COPY"])
+async def webdav_handler(tenant: str, path: str, request: Request):
+    _webdav_auth(request)
+    base = Path(os.environ.get("VAULT_ROOT", "/srv/vault-write")) / tenant
+    target = _webdav_path(tenant, path)
+
+    if request.method == "PROPFIND":
+        depth = request.headers.get("Depth", "1")
+        paths = [target]
+        if depth != "0" and target.is_dir():
+            paths = [target] + sorted(target.iterdir(), key=lambda p: (not p.is_dir(), p.name))
+        responses = []
+        for p in paths:
+            rel = f"/vault/{tenant}/{p.relative_to(base)}"
+            if p.is_dir():
+                rel += "/"
+            is_dir = p.is_dir()
+            size = p.stat().st_size if p.is_file() else 0
+            mtime = datetime.fromtimestamp(p.stat().st_mtime, tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+            props = {
+                "displayname": p.name,
+                "resourcetype": "<D:collection/>" if is_dir else "",
+                "getcontentlength": str(size),
+                "getlastmodified": mtime,
+                "creationdate": mtime,
+            }
+            responses.append((rel, 200, props))
+        xml = _webdav_xml_multistatus(responses)
+        return Response(content=xml, media_type="application/xml; charset=utf-8", headers={"DAV": "1"})
+
+    if request.method == "GET":
+        if not target.exists():
+            raise HTTPException(status_code=404, detail="Not found")
+        if target.is_dir():
+            items = []
+            for p in sorted(target.iterdir()):
+                name = p.name + "/" if p.is_dir() else p.name
+                items.append(f'<li><a href="{name}">{name}</a></li>')
+            html = f"<html><body><h1>Index of /vault/{tenant}/{path}</h1><ul>{''.join(items)}</ul></body></html>"
+            return Response(content=html, media_type="text/html")
+        return Response(content=target.read_bytes(), media_type="application/octet-stream")
+
+    if request.method == "PUT":
+        body = await request.body()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(body)
+        return Response(status_code=201)
+
+    if request.method == "DELETE":
+        if target.exists():
+            if target.is_dir():
+                import shutil
+                shutil.rmtree(target)
+            else:
+                target.unlink()
+        return Response(status_code=204)
+
+    if request.method == "MKCOL":
+        target.mkdir(parents=True, exist_ok=True)
+        return Response(status_code=201)
+
+    if request.method == "MOVE":
+        dest = request.headers.get("Destination", "")
+        if not dest:
+            raise HTTPException(status_code=400, detail="Destination header required")
+        dest_path = _webdav_path(tenant, dest.replace(f"/vault/{tenant}/", ""))
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        target.rename(dest_path)
+        return Response(status_code=204)
+
+    raise HTTPException(status_code=405, detail="Method not allowed")
 
 
 def run():
