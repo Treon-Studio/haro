@@ -1,12 +1,14 @@
 import type { APIRoute } from "astro"
-import { listVaultFiles } from "@/lib/neon"
+import { callMemoryTool } from "@/lib/memory-fabric"
 
 export const prerender = false
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ url }) => {
   try {
-    const files = await listVaultFiles()
-    return new Response(JSON.stringify({ success: true, data: files }), {
+    const tenant = url.searchParams.get("tenant") || "default"
+    const path = url.searchParams.get("path") || ""
+    const result = await callMemoryTool("vault_list", { tenant, path })
+    return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     })
