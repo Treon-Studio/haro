@@ -42,7 +42,7 @@ export function MemoryGraph({ tenant = "default" }: { tenant?: string }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/gbrain")
+        const res = await fetch("/api/gbrain?tenant=" + tenant)
         const json = await res.json()
         if (json.success) {
           setPages(json.data)

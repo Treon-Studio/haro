@@ -3,11 +3,6 @@ import { callMemoryTool } from "@/lib/memory-fabric"
 
 export const prerender = false
 
-function getTenantFromRequest(request: Request): string {
-  const url = new URL(request.url)
-  return url.searchParams.get("tenant") || "default"
-}
-
 export const GET: APIRoute = async ({ url }) => {
   try {
     const tenant = url.searchParams.get("tenant") || "default"

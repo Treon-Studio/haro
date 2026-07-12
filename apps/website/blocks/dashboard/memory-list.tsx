@@ -18,7 +18,7 @@ interface ListResponse {
   total: number
 }
 
-export function MemoryList() {
+export function MemoryList({ tenant = "default" }: { tenant?: string }) {
   const [memories, setMemories] = useState<Memory[]>([])
   const [total, setTotal] = useState(0)
   const [search, setSearch] = useState("")
@@ -30,7 +30,7 @@ export function MemoryList() {
   const fetchMemories = useCallback(async (q: string, off: number) => {
     setLoading(true)
     try {
-      const params = new URLSearchParams({ limit: String(limit), offset: String(off) })
+      const params = new URLSearchParams({ limit: String(limit), offset: String(off), tenant })
       if (q) params.set("search", q)
       const res = await fetch(`/api/memories?${params}`)
       const json = await res.json()
@@ -48,7 +48,7 @@ export function MemoryList() {
   }, [fetchMemories, search, offset])
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/memories?id=${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/memories?id=${id}&tenant=${tenant}`, { method: "DELETE" })
     const json = await res.json()
     if (json.success) {
       setMemories((prev) => prev.filter((m) => m.id !== id))
