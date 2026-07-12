@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Network } from "vis-network"
 import { DataSet } from "vis-data"
+import { callMemoryTool } from "@/lib/memory-fabric"
 
 interface GbrainPage {
   id: string
@@ -28,11 +29,14 @@ interface GraphEdge {
   label?: string
 }
 
-export function MemoryGraph() {
+export function MemoryGraph({ tenant = "default" }: { tenant?: string }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const networkRef = useRef<Network | null>(null)
   const [pages, setPages] = useState<GbrainPage[]>([])
   const [selected, setSelected] = useState<GbrainPage | null>(null)
+  const [editing, setEditing] = useState<GbrainPage | null>(null)
+  const [editTitle, setEditTitle] = useState("")
+  const [editBody, setEditBody] = useState("")
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -138,12 +142,103 @@ export function MemoryGraph() {
       <div ref={containerRef} class="flex-1 rounded-lg border border-border bg-background" />
       {selected && (
         <div class="w-72 shrink-0 rounded-lg border border-border bg-card p-4 overflow-y-auto">
-          <h3 class="font-semibold text-foreground mb-1">{selected.title || selected.slug}</h3>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-semibold text-foreground">{selected.title || selected.slug}</h3>
+            <div class="flex gap-1">
+              <button
+                type="button"
+                class="rounded p-1 text-text-tertiary hover:text-foreground hover:bg-background-secondary transition-colors"
+                title="Edit"
+                onClick={() => {
+                  setEditing(selected)
+                  setEditTitle(selected.title)
+                  setEditBody(selected.body)
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="rounded p-1 text-text-tertiary hover:text-red-500 hover:bg-background-secondary transition-colors"
+                title="Delete"
+                onClick={async () => {
+                  if (!confirm("Delete this node?")) return
+                  await callMemoryTool("gbrain_delete", { tenant, slug: selected.slug })
+                  setPages((prev) => prev.filter((p) => p.id !== selected.id))
+                  setSelected(null)
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 6h18" />
+                  <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                  <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
+              </button>
+            </div>
+          </div>
           <p class="text-xs text-text-tertiary mb-2">Type: {selected.type}</p>
           <p class="text-xs text-text-tertiary mb-2">Slug: /{selected.slug}</p>
           <p class="text-sm text-text-secondary whitespace-pre-wrap line-clamp-[15]">
             {selected.body || "(no body)"}
           </p>
+        </div>
+      )}
+
+      {editing && (
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div class="w-full max-w-lg rounded-lg border border-border bg-card p-6 shadow-xl">
+            <h3 class="font-semibold text-foreground mb-4">Edit Node</h3>
+            <label class="block text-sm text-text-secondary mb-1">Title</label>
+            <input
+              class="w-full mb-3 rounded border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+            />
+            <label class="block text-sm text-text-secondary mb-1">Body</label>
+            <textarea
+              class="w-full mb-4 rounded border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px]"
+              value={editBody}
+              onChange={(e) => setEditBody(e.target.value)}
+            />
+            <div class="flex justify-end gap-2">
+              <button
+                type="button"
+                class="rounded px-4 py-2 text-sm text-text-secondary hover:text-foreground border border-border transition-colors"
+                onClick={() => setEditing(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                class="rounded px-4 py-2 text-sm text-white bg-primary hover:bg-primary-hover transition-colors"
+                onClick={async () => {
+                  await callMemoryTool("gbrain_put", {
+                    tenant,
+                    slug: editing.slug,
+                    title: editTitle,
+                    body: editBody,
+                  })
+                  setPages((prev) =>
+                    prev.map((p) =>
+                      p.id === editing.id
+                        ? { ...p, title: editTitle, body: editBody }
+                        : p,
+                    ),
+                  )
+                  setSelected((prev) =>
+                    prev?.id === editing.id
+                      ? { ...prev, title: editTitle, body: editBody }
+                      : prev,
+                  )
+                  setEditing(null)
+                }}
+              >
+                Save
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
