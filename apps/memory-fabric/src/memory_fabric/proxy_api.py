@@ -359,8 +359,18 @@ def _webdav_auth(request: Request) -> None:
     if not api_key:
         return
     auth = request.headers.get("Authorization", "")
-    if auth != f"Bearer {api_key}":
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    if auth == f"Bearer {api_key}":
+        return
+    if auth.startswith("Basic "):
+        import base64
+        try:
+            decoded = base64.b64decode(auth[6:]).decode()
+            _, password = decoded.split(":", 1)
+            if password == api_key:
+                return
+        except Exception:
+            pass
+    raise HTTPException(status_code=401, detail="Unauthorized")
 
 
 def _webdav_xml_multistatus(responses: list[tuple[str, int, dict]]) -> str:
