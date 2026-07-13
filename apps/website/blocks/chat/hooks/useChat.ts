@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { MODELS, type Model, loadApiKey } from '../config/providers';
+import { MODELS, type Model } from '../config/providers';
 
 export type { Model };
 export { MODELS };
@@ -94,11 +94,10 @@ async function fetchAIResponseFollowup(
   onChunk: (chunk: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
-  const clientApiKey = loadApiKey(provider);
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, model, provider, apiKey: clientApiKey, webSearch: false }),
+    body: JSON.stringify({ messages, model, provider, webSearch: false }),
     signal,
   });
 
@@ -222,9 +221,8 @@ async function fetchAIResponse(
   webSearch: boolean,
   signal: AbortSignal,
 ): Promise<void> {
-  const clientApiKey = loadApiKey(provider);
   // Build request with optional web search tools and file attachments
-  const body: Record<string, any> = { messages, model, provider, apiKey: clientApiKey, webSearch };
+  const body: Record<string, any> = { messages, model, provider, webSearch };
 
   const response = await fetch('/api/chat', {
     method: 'POST',
