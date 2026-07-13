@@ -1,13 +1,22 @@
 import type { APIRoute } from 'astro';
 import type { Message } from '../../../blocks/chat/hooks/useChat';
+import {
+  runAssistantTurn,
+  createGatewayClient,
+  WEB_SEARCH_TOOL,
+  IMAGE_GENERATION_TOOL,
+  webSearchExecutor,
+  createImageGenerationExecutor,
+} from '@/domain/assistant';
+import type { GatewayMessage, ToolDefinition, TurnEvent } from '@/domain/assistant';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    const { messages, model, webSearch, files } = await request.json();
+    const { messages, model, webSearch } = await request.json();
 
     const gatewayUrl = (import.meta.env.GATEWAY_URL || 'http://localhost:8787').replace(/\/+$/, '');
 
-    const formattedMessages = messages.map((m: Message) => {
+    const formattedMessages: GatewayMessage[] = messages.map((m: Message) => {
       if (m.role === 'user' && m.attachments?.length) {
         const contentBlocks: any[] = [];
         if (m.content) contentBlocks.push({ type: 'text', text: m.content });
@@ -21,72 +30,58 @@ export const POST: APIRoute = async ({ request }) => {
       return { role: m.role, content: m.content };
     });
 
-    const requestBody: Record<string, any> = {
-      model,
-      messages: formattedMessages,
-      stream: true,
-      max_tokens: 2000,
+    const tools: ToolDefinition[] | undefined = webSearch ? [WEB_SEARCH_TOOL, IMAGE_GENERATION_TOOL] : undefined;
+    const gatewayClient = createGatewayClient(gatewayUrl, 'haro-assistant-default');
+    const toolExecutors = {
+      web_search: webSearchExecutor,
+      image_generation: createImageGenerationExecutor(import.meta.env.OPENROUTER_IMAGE_API_KEY || ''),
     };
 
-    if (webSearch) {
-      requestBody.tools = [
-        {
-          type: 'function',
-          function: {
-            name: 'web_search',
-            description: 'Search the web for current information',
-            parameters: {
-              type: 'object',
-              properties: {
-                query: { type: 'string', description: 'Search query' },
-                recency_days: { type: 'number', description: 'Limit to past days. Optional.' },
-              },
-              required: ['query'],
-            },
-          },
-        },
-        {
-          type: 'function',
-          function: {
-            name: 'image_generation',
-            description: 'Generate an image from a text description',
-            parameters: {
-              type: 'object',
-              properties: {
-                prompt: { type: 'string', description: 'Text description of the image' },
-                aspect_ratio: { type: 'string', enum: ['1:1', '16:9', '9:16', '4:3'] },
-              },
-              required: ['prompt'],
-            },
-          },
-        },
-      ];
-      requestBody.tool_choice = 'auto';
-    }
+    console.log(`[CHAT API] runAssistantTurn model=${model} messages=${messages.length} webSearch=${webSearch}`);
 
-    const url = `${gatewayUrl}/v1/chat/completions`;
+    const turnIterator = runAssistantTurn(
+      { messages: formattedMessages, model, tools, maxTokens: 2000 },
+      { gatewayClient, toolExecutors },
+    );
 
-    console.log(`[CHAT API] Calling gateway at ${url} model=${model} messages=${messages.length} webSearch=${webSearch}`);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-haro-config-id': 'haro-assistant-default',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`[CHAT API ERROR] Gateway returned status ${response.status}:`, errorText);
-      return new Response(JSON.stringify({ error: `Gateway API error: ${response.status} ${errorText}` }), {
-        status: response.status,
+    let firstResult: IteratorResult<TurnEvent>;
+    try {
+      firstResult = await turnIterator.next();
+    } catch (error: any) {
+      console.error('[CHAT API ERROR] Gateway call failed:', error);
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: error.status ?? 500,
         headers: { 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(response.body, {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      async start(controller) {
+        function emit(event: TurnEvent) {
+          if (event.type === 'content') {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: event.text } }] })}\n\n`));
+          } else if (event.type === 'error') {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: event.message })}\n\n`));
+          }
+          // 'tool_call' events are for server-side observability only — never forwarded to the client.
+        }
+        try {
+          let result = firstResult;
+          while (!result.done) {
+            emit(result.value);
+            result = await turnIterator.next();
+          }
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        } catch (error: any) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: error.message })}\n\n`));
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' },
     });
   } catch (error: any) {

@@ -226,4 +226,45 @@ describe("POST /api/chat", () => {
     const body = await res.json()
     expect(body.error).toBe("Network error")
   })
+
+  it("executes web_search server-side and never leaks tool_calls to the client stream", async () => {
+    mockFetch
+      .mockImplementationOnce(async () => ({
+        ok: true,
+        body: new ReadableStream({
+          start(controller: ReadableStreamDefaultController) {
+            controller.enqueue(new TextEncoder().encode(
+              'data: {"choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","function":{"name":"web_search","arguments":"{\\"query\\":\\"answer\\"}"}}]}}]}\n\n' +
+              'data: {"choices":[{"delta":{},"finish_reason":"tool_calls"}]}\n\ndata: [DONE]\n\n'
+            ))
+            controller.close()
+          },
+        }),
+      }))
+      .mockImplementationOnce(async () => ({
+        ok: true,
+        json: async () => ({ AbstractText: "42", AbstractURL: "https://example.com" }),
+      }))
+      .mockImplementationOnce(async () => ({
+        ok: true,
+        body: new ReadableStream({
+          start(controller: ReadableStreamDefaultController) {
+            controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"The answer is 42."}}]}\n\ndata: [DONE]\n\n'))
+            controller.close()
+          },
+        }),
+      }))
+
+    const { POST } = await import("../chat")
+    const req = new Request("http://localhost:4321/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: [{ role: "user", content: "what is the answer?" }], model: "openrouter/auto", webSearch: true }),
+    })
+    const res = await POST({ request: req } as any)
+    const text = await res.text()
+
+    expect(text).not.toContain("tool_calls")
+    expect(text).toContain("The answer is 42.")
+  })
 })
