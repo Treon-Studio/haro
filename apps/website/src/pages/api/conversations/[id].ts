@@ -1,10 +1,6 @@
 import type { APIRoute } from 'astro'
 import { query } from '@/lib/neon/client'
 
-function getKv(locals: any) {
-  return locals?.runtime?.env?.CONVERSATIONS
-}
-
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
@@ -20,49 +16,30 @@ function json(data: unknown, status = 200): Response {
   })
 }
 
-// Helper to determine the key prefix based on B2B company context or personal user context
-async function getPrefixAndKey(context: any, conversationId: string): Promise<{ key: string | null; errorResponse?: Response }> {
+async function getOwnerKey(context: any): Promise<{ ownerKey: string; errorResponse?: Response }> {
   const { request, locals } = context
-  const kv = getKv(locals)
-  if (!kv) {
-    return { key: null, errorResponse: json({ error: 'KV not available (dev mode)' }, 503) }
-  }
-
   const url = new URL(request.url)
   const companyId = url.searchParams.get('companyId') || request.headers.get('x-company-id')
   const userId = locals.session?.userId
 
   if (companyId) {
-    // 1. B2B Multi-tenant flow: Validate user belongs to company
     if (!userId) {
-      return { key: null, errorResponse: json({ error: 'Unauthorized: Session required' }, 401) }
+      return { ownerKey: '', errorResponse: json({ error: 'Unauthorized: Session required' }, 401) }
     }
-
     const membershipResult = await query(
       'SELECT id FROM public.company_memberships WHERE company_id = $1 AND user_id = $2 AND status = $3 LIMIT 1',
-      [companyId, userId, 'active']
+      [companyId, userId, 'active'],
     )
-
     if (membershipResult.rows.length === 0) {
-      return { key: null, errorResponse: json({ error: 'Forbidden: You are not an active member of this organization' }, 403) }
+      return { ownerKey: '', errorResponse: json({ error: 'Forbidden: You are not an active member of this organization' }, 403) }
     }
-
-    const prefix = `conv:org:${companyId}:`
-    const key = `${prefix}${conversationId}`
-    return { key }
-  } else {
-    // 2. B2C Personal flow: Isolate by user ID
-    if (!userId) {
-      // Dev mode or unauthenticated fallback
-      const prefix = 'conv:personal:anonymous:'
-      const key = `${prefix}${conversationId}`
-      return { key }
-    }
-
-    const prefix = `conv:personal:${userId}:`
-    const key = `${prefix}${conversationId}`
-    return { key }
+    return { ownerKey: `org:${companyId}` }
   }
+
+  if (!userId) {
+    return { ownerKey: 'personal:anonymous' }
+  }
+  return { ownerKey: `personal:${userId}` }
 }
 
 // GET /api/conversations/[id]
@@ -70,18 +47,14 @@ export const GET: APIRoute = async (context) => {
   const { id } = context.params
   if (!id) return json({ error: 'ID is required' }, 400)
 
-  const kv = getKv(context.locals)
-  if (!kv) return json({ error: 'KV not available (dev mode)' }, 503)
-
   try {
-    const { key, errorResponse } = await getPrefixAndKey(context, id)
+    const { ownerKey, errorResponse } = await getOwnerKey(context)
     if (errorResponse) return errorResponse
-    if (!key) return json({ error: 'Invalid key construction' }, 400)
 
-    const raw = await kv.get(key)
-    if (!raw) return json({ error: 'Conversation not found' }, 404)
+    const result = await query('SELECT data FROM conversations WHERE id = $1 AND owner_key = $2', [id, ownerKey])
+    if (result.rows.length === 0) return json({ error: 'Conversation not found' }, 404)
 
-    return json(JSON.parse(raw))
+    return json(result.rows[0].data)
   } catch (e: any) {
     return json({ error: e.message }, 500)
   }
