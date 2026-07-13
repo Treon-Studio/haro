@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest"
+import { describe, it, expect, vi } from "vitest"
 import { Effect } from "effect"
 import { IAuthRepository } from "../auth.repository"
 import { IInvitationsRepository } from "@/domain/invitations/index"
@@ -91,6 +91,86 @@ describe("signUpProgram", () => {
       signUpProgram({ email: "user@example.com", password: "12" }).pipe(
         Effect.provideService(IAuthRepository, mockRepo),
         Effect.provideService(IInvitationsRepository, mockInvitationsRepo),
+        Effect.catchAll((e) => Effect.succeed(e)),
+      ),
+    )
+    expect(result).toBeInstanceOf(ValidationError)
+  })
+
+  it("leaves company_id/company_name undefined for an organic (non-invited) signup", async () => {
+    const result = await runWithRepo(signUpProgram({ email: "user@example.com", password: "password123" }))
+    expect(result.company_id).toBeUndefined()
+    expect(result.company_name).toBeUndefined()
+  })
+
+  it("threads the invitation's real companyId/companyName through on an invited signup", async () => {
+    const realInvitation = {
+      id: "invitation-real-42",
+      companyId: "acme-corp-9f3e",
+      companyName: "Acme Corporation",
+      email: "invitee@acme.com",
+      role: "member",
+      tokenHash: "hash",
+      invitedBy: "admin-1",
+      expiresAt: "2027-01-01T00:00:00Z",
+      status: "pending",
+      acceptedAt: null,
+      createdAt: "2026-01-01T00:00:00Z",
+    } as any
+
+    const acceptInvitation = vi.fn(() => Effect.succeed({ ...realInvitation, status: "accepted" }))
+    const invitationsRepoWithRealInvitation = {
+      ...mockInvitationsRepo,
+      verifyInvitation: vi.fn(() => Effect.succeed(realInvitation)),
+      acceptInvitation,
+    } satisfies IInvitationsRepository["Type"]
+
+    const result = await Effect.runPromise(
+      signUpProgram({
+        email: "invitee@acme.com",
+        password: "password123",
+        invitationToken: "raw-invite-token",
+      }).pipe(
+        Effect.provideService(IAuthRepository, mockRepo),
+        Effect.provideService(IInvitationsRepository, invitationsRepoWithRealInvitation),
+      ),
+    )
+
+    // The resolved result must carry the *invitation's* company_id/company_name —
+    // not a placeholder, not the user's id — proving the acceptInvitation ->
+    // merge -> toAuthDto chain in auth.programs.ts actually ran.
+    expect(result.company_id).toBe("acme-corp-9f3e")
+    expect(result.company_name).toBe("Acme Corporation")
+    expect(acceptInvitation).toHaveBeenCalledWith("invitation-real-42", "user-1")
+  })
+
+  it("rejects an invited signup when the email does not match the invitation", async () => {
+    const realInvitation = {
+      id: "invitation-real-42",
+      companyId: "acme-corp-9f3e",
+      companyName: "Acme Corporation",
+      email: "invitee@acme.com",
+      role: "member",
+      tokenHash: "hash",
+      invitedBy: "admin-1",
+      expiresAt: "2027-01-01T00:00:00Z",
+      status: "pending",
+      acceptedAt: null,
+      createdAt: "2026-01-01T00:00:00Z",
+    } as any
+    const invitationsRepoWithRealInvitation = {
+      ...mockInvitationsRepo,
+      verifyInvitation: vi.fn(() => Effect.succeed(realInvitation)),
+    } satisfies IInvitationsRepository["Type"]
+
+    const result = await Effect.runPromise(
+      signUpProgram({
+        email: "someone-else@example.com",
+        password: "password123",
+        invitationToken: "raw-invite-token",
+      }).pipe(
+        Effect.provideService(IAuthRepository, mockRepo),
+        Effect.provideService(IInvitationsRepository, invitationsRepoWithRealInvitation),
         Effect.catchAll((e) => Effect.succeed(e)),
       ),
     )
