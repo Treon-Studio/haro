@@ -32,12 +32,12 @@ Every task below (26 total, Task 0.0 through 7.4) has an explicit **Depends on:*
 Independent tracks that can be worked **in parallel** (no cross-track dependency until they converge at Task 4.1):
 
 | Track | Sequence | Converges at |
-|---|---|---|
-| **A — Identity foundation** | 0.0 [DONE] → 0.4 · 0.1 [DONE] (independent) · 0.2 ∥ 0.3 → 0.4 | feeds Track D and Task 4.1 |
-| **B — Gateway routing + loop** | 1.1 → 1.2 → 1.3 | feeds Track D, Track E, Task 4.1 |
-| **C — Safety plugin** | 3.1 (fully independent, start any time) | feeds Track E |
-| **D — Memory wiring** | (needs Track A's 0.3+0.4, Track B's 1.2) → 2.1 → 2.2 → 2.3 · 2.4 independent, run any time | feeds Task 4.1 |
-| **E — Safety wiring** | (needs Track B's 1.2, Track C's 3.1) → 3.2 | feeds Task 4.1 |
+|---|---|---|---|
+| **A — Identity foundation** | 0.0 [DONE] → 0.4 · 0.1 [DONE] (independent) · 0.2 [DONE] ∥ 0.3 [DONE] → 0.4 (unblocked, not started) | feeds Track D and Task 4.1 |
+| **B — Gateway routing + loop** | 1.1 [DONE] → 1.2 (unblocked, not started) → 1.3 | feeds Track D, Track E, Task 4.1 |
+| **C — Safety plugin** | 3.1 [DONE] (fully independent, start any time) | feeds Track E |
+| **D — Memory wiring** | (needs Track A's 0.3 [DONE] +0.4, Track B's 1.2) → 2.1 → 2.2 → 2.3 · 2.4 independent, run any time (not started) | feeds Task 4.1 |
+| **E — Safety wiring** | (needs Track B's 1.2, Track C's 3.1 [DONE]) → 3.2 (blocked only on 1.2 now) | feeds Task 4.1 |
 
 **Gate — Task 4.1** requires ALL of: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 0.4 complete. This is the single biggest join point in the plan — nothing in Phase 5/6/7 (except the few explicitly marked independent below) can start before it.
 
