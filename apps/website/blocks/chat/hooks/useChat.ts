@@ -87,139 +87,15 @@ function loadActiveId(): string | null {
   return localStorage.getItem(ACTIVE_KEY);
 }
 
-async function fetchAIResponseFollowup(
-  messages: any[],
-  model: string,
-  onChunk: (chunk: string) => void,
-  signal: AbortSignal,
-): Promise<void> {
-  const response = await fetch('/api/chat', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, model, webSearch: false }),
-    signal,
-  });
 
-  if (!response.ok) {
-    const errorJson = await response.json().catch(() => null);
-    const errorMsg = errorJson?.error || 'Failed to fetch AI response';
-    throw new Error(typeof errorMsg === 'object' ? JSON.stringify(errorMsg) : errorMsg);
-  }
-
-  if (!response.body) throw new Error('No response body');
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder('utf-8');
-  let done = false;
-  let buffer = '';
-
-  while (!done) {
-    const { value, done: readerDone } = await reader.read();
-    done = readerDone;
-    if (value) {
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.trim() === '') continue;
-        if (line.startsWith('data: ')) {
-          const dataStr = line.slice(6).trim();
-          if (dataStr === '[DONE]') return;
-          try {
-            const data = JSON.parse(dataStr);
-            const contentChunk = data.choices?.[0]?.delta?.content;
-            if (contentChunk) onChunk(contentChunk);
-          } catch {}
-        }
-      }
-    }
-  }
-}
-
-async function executeWebSearch(query: string, recencyDays?: number): Promise<string> {
-  try {
-    // Use DuckDuckGo HTML scraping for free web search (no API key needed)
-    const response = await fetch(
-      `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1`,
-      { signal: AbortSignal.timeout(8000) },
-    );
-    if (!response.ok) throw new Error('Search failed');
-
-    const data = await response.json();
-
-    // Extract relevant results
-    const results: string[] = [];
-
-    if (data.AbstractText) {
-      results.push(`Source: ${data.AbstractURL || 'Unknown'}\n${data.AbstractText}`);
-    }
-
-    if (data.RelatedTopics?.length > 0) {
-      for (const topic of data.RelatedTopics.slice(0, 5)) {
-        if (topic.Text) {
-          results.push(`- ${topic.Text}${topic.FirstURL ? ` (${topic.FirstURL})` : ''}`);
-        }
-      }
-    }
-
-    // Fallback: construct answer from AnswerType
-    if (results.length === 0 && data.AnswerType) {
-      results.push(`Answer: ${data.Answer}`);
-    }
-
-    return results.length > 0
-      ? results.join('\n\n')
-      : JSON.stringify({ query, message: 'No results found', recency_days: recencyDays });
-  } catch {
-    return JSON.stringify({ query, error: 'Web search failed. Please try again.' });
-  }
-}
-
-async function executeImageGeneration(prompt: string, aspectRatio?: string): Promise<string> {
-  const apiKey = typeof window !== 'undefined'
-    ? localStorage.getItem('tenang:apiKey') || ''
-    : '';
-  const openrouterKey = import.meta.env?.OPENROUTER_API_KEY || '';
-
-  const finalKey = openrouterKey || apiKey;
-  if (!finalKey) {
-    throw new Error('API key not configured for image generation');
-  }
-
-  const response = await fetch('https://openrouter.ai/api/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${finalKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'blackforest-labs/flux-schnell',
-      prompt,
-      aspect_ratio: aspectRatio || '1:1',
-      steps: 4,
-    }),
-  });
-
-  if (!response.ok) {
-    const err = await response.text();
-    throw new Error(`Image generation failed: ${err}`);
-  }
-
-  const data = await response.json();
-  return JSON.stringify({ imageUrl: data.data?.[0]?.url, revisedPrompt: data.data?.[0]?.revised_prompt });
-}
 
 async function fetchAIResponse(
   messages: Message[],
   model: string,
   onChunk: (chunk: string) => void,
-  onToolCall: (toolCallId: string, name: string, args: string) => void,
-  onToolDone: () => void,
   webSearch: boolean,
   signal: AbortSignal,
 ): Promise<void> {
-  // Build request with optional web search tools and file attachments
   const body: Record<string, any> = { messages, model, webSearch };
 
   const response = await fetch('/api/chat', {
@@ -244,11 +120,6 @@ async function fetchAIResponse(
   let done = false;
   let buffer = '';
 
-  // Accumulator for tool_calls deltas
-  let currentToolCallId = '';
-  let currentToolCallName = '';
-  let currentToolCallArgs = '';
-
   while (!done) {
     const { value, done: readerDone } = await reader.read();
     done = readerDone;
@@ -261,47 +132,18 @@ async function fetchAIResponse(
         if (line.trim() === '') continue;
         if (line.startsWith('data: ')) {
           const dataStr = line.slice(6).trim();
-          if (dataStr === '[DONE]') {
-            onToolDone();
-            return;
-          }
+          if (dataStr === '[DONE]') return;
           try {
             const data = JSON.parse(dataStr);
-            const delta = data.choices?.[0]?.delta;
-
-            // Handle content chunks
-            const contentChunk = delta?.content;
-            if (contentChunk) {
-              onChunk(contentChunk);
-            }
-
-            // Handle tool_call deltas (function calling)
-            const toolCalls = delta?.tool_calls;
-            if (toolCalls && toolCalls.length > 0) {
-              for (const tc of toolCalls) {
-                if (tc.index !== undefined && tc.index > 0) continue; // only first tool
-                if (tc.id) currentToolCallId = tc.id;
-                if (tc.function?.name) currentToolCallName = tc.function.name;
-                if (tc.function?.arguments) currentToolCallArgs += tc.function.arguments;
-              }
-            }
-
-            // Handle tool_call done (finish_reason = 'tool_calls')
-            const finishReason = data.choices?.[0]?.finish_reason;
-            if (finishReason === 'tool_calls' && currentToolCallId && currentToolCallName) {
-              onToolCall(currentToolCallId, currentToolCallName, currentToolCallArgs);
-              currentToolCallId = '';
-              currentToolCallName = '';
-              currentToolCallArgs = '';
-            }
-          } catch (e) {
+            const contentChunk = data.choices?.[0]?.delta?.content;
+            if (contentChunk) onChunk(contentChunk);
+          } catch {
             // parsing error, ignore
           }
         }
       }
     }
   }
-  onToolDone();
 }
 
 export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
@@ -310,12 +152,9 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
     return initialChatId || null;
   });
   const [isStreaming, setIsStreaming] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   const [selectedModel, setSelectedModel] = useState<Model>(MODELS[0]);
   const [webSearch, setWebSearch] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
-  const isToolCallRef = useRef(false);
-  const toolSearchResultRef = useRef<string>('');
   const activeConvIdRef = useRef(activeConvId);
   const conversationsRef = useRef(conversations);
   const isStreamingRef = useRef(isStreaming);
@@ -474,14 +313,14 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
     if (typeof window === 'undefined') return;
     localStorage.setItem(CONVS_KEY, serializeConvs(conversations));
 
-    if (isStreaming || isSearching) return;
+    if (isStreaming) return;
 
     const timeout = setTimeout(() => {
       saveToAPI(conversations);
     }, 1000);
 
     return () => clearTimeout(timeout);
-  }, [conversations, isStreaming, isSearching, saveToAPI]);
+  }, [conversations, isStreaming, saveToAPI]);
 
   // Persist active conversation ID
   useEffect(() => {
@@ -581,8 +420,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
 
       setIsStreaming(true);
       abortRef.current = new AbortController();
-      isToolCallRef.current = false;
-      toolSearchResultRef.current = '';
 
       const currentConvMessages = baseMessages || [
         ...(conversationsRef.current.find((c) => c.id === convId)?.messages ?? []),
@@ -594,8 +431,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
           currentConvMessages,
           model.id,
           (chunk) => {
-            // Skip chunks while a tool call is being executed
-            if (isToolCallRef.current) return;
             setConversations((prev) =>
               prev.map((c) =>
                 c.id === convId
@@ -610,124 +445,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
                   : c,
               ),
             );
-          },
-          async (toolCallId, toolName, toolArgs) => {
-            isToolCallRef.current = true;
-            setIsSearching(true);
-
-            // Show "Searching..." in the message
-            setConversations((prev) =>
-              prev.map((c) =>
-                c.id === convId
-                  ? {
-                      ...c,
-                      messages: c.messages.map((m) =>
-                        m.id === assistantMsgId
-                          ? { ...m, content: m.content + `\n[Calling ${toolName}...]` }
-                          : m,
-                      ),
-                    }
-                  : c,
-              ),
-            );
-
-            try {
-              let toolResult = '';
-              const args = JSON.parse(toolArgs || '{}');
-
-              if (toolName === 'web_search') {
-                toolResult = await executeWebSearch(args.query, args.recency_days);
-              } else if (toolName === 'image_generation') {
-                const imageUrl = await executeImageGeneration(args.prompt, args.aspect_ratio);
-                toolResult = JSON.stringify({ imageUrl, prompt: args.prompt });
-              }
-
-              toolSearchResultRef.current = toolResult;
-
-              // Add tool result as a tool role message
-              const toolMsgId = generateId();
-              const toolMsg: Message = {
-                id: toolMsgId,
-                role: 'tool',
-                content: toolResult,
-                createdAt: new Date(),
-              };
-
-              setConversations((prev) =>
-                prev.map((c) =>
-                  c.id === convId
-                    ? { ...c, messages: [...c.messages, toolMsg], updatedAt: new Date() }
-                    : c,
-                ),
-              );
-
-              // Continue with a follow-up request that includes the tool result
-              // Clear the placeholder and continue streaming
-              setConversations((prev) =>
-                prev.map((c) =>
-                  c.id === convId
-                    ? {
-                        ...c,
-                        messages: c.messages.map((m) =>
-                          m.id === assistantMsgId
-                            ? { ...m, content: '' }
-                            : m,
-                        ),
-                      }
-                    : c,
-                ),
-              );
-
-              // Make follow-up request with tool result
-              abortRef.current = new AbortController();
-              await fetchAIResponseFollowup(
-                [
-                  ...currentConvMessages,
-                  { role: 'assistant' as const, content: '', tool_calls: [{ id: toolCallId, type: 'function' as const, function: { name: toolName, arguments: toolArgs } }] },
-                  { role: 'tool' as const, content: toolResult, tool_call_id: toolCallId },
-                ],
-                model.id,
-                (chunk) => {
-                  setConversations((prev) =>
-                    prev.map((c) =>
-                      c.id === convId
-                        ? {
-                            ...c,
-                            messages: c.messages.map((m) =>
-                              m.id === assistantMsgId
-                                ? { ...m, content: m.content + chunk }
-                                : m,
-                            ),
-                          }
-                        : c,
-                    ),
-                  );
-                },
-                abortRef.current.signal,
-              );
-            } catch (toolError) {
-              setConversations((prev) =>
-                prev.map((c) =>
-                  c.id === convId
-                    ? {
-                        ...c,
-                        messages: c.messages.map((m) =>
-                          m.id === assistantMsgId
-                            ? { ...m, content: m.content + `\n[Tool error: ${String(toolError)}]` }
-                            : m,
-                        ),
-                      }
-                    : c,
-                ),
-              );
-            } finally {
-              setIsSearching(false);
-              isToolCallRef.current = false;
-            }
-          },
-          () => {
-            setIsSearching(false);
-            isToolCallRef.current = false;
           },
           webSearchRef.current,
           abortRef.current.signal,
@@ -769,8 +486,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
           ),
         );
         setIsStreaming(false);
-        setIsSearching(false);
-        isToolCallRef.current = false;
       }
     },
     [],
@@ -867,7 +582,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
     activeConversation,
     activeConvId,
     isStreaming,
-    isSearching,
     selectedModel,
     setSelectedModel,
     selectedProvider: selectedModel.provider,
