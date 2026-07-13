@@ -17,6 +17,7 @@ export const handler: PluginHandler = async (
   try {
     const regexPattern = parameters.rule;
     const not = parameters.not || false;
+    const flags = parameters.flags || '';
     let textToMatch = getText(context, eventType);
 
     if (!regexPattern) {
@@ -27,7 +28,7 @@ export const handler: PluginHandler = async (
       throw new Error('Missing text to match');
     }
 
-    const regex = new RegExp(regexPattern);
+    const regex = new RegExp(regexPattern, flags);
     const match = regex.exec(textToMatch);
 
     // Determine verdict based on not parameter

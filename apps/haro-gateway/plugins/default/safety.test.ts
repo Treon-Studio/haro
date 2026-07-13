@@ -19,7 +19,8 @@
  *     {
  *       "id": "default.regexMatch",
  *       "parameters": {
- *         "rule": "(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)"
+ *         "rule": "(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)",
+ *         "flags": "i"
  *       }
  *     }
  *   ]
@@ -66,6 +67,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('Saya rasa saya ingin bunuh diri. Semua terasa gelap.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -73,10 +75,23 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     expect(result.data.matchDetails.matchedText).toBe('bunuh diri');
   });
 
+  it('should detect case-insensitive crisis keywords', async () => {
+    const context = makeContext('Dia ingin Bunuh Diri karena depresi.');
+    const parameters: PluginParameters = {
+      rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
+      not: false,
+    };
+    const result = await regexMatchHandler(context, parameters, mockEventType);
+    expect(result.verdict).toBe(true);
+    expect(result.data.matchDetails.matchedText).toBe('Bunuh Diri');
+  });
+
   it('should detect "ingin mati" in response text', async () => {
     const context = makeContext('Saya sudah tidak kuat lagi. Saya ingin mati saja.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -88,6 +103,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('Aku gak tahan lagi dengan semua ini.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -99,6 +115,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('Dia ingin mengakhiri hidupnya karena depresi berat.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -110,6 +127,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('Dia terus menyakiti dirinya sendiri tanpa henti.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -121,6 +139,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('I am thinking about suicide and I need help.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -132,6 +151,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('I feel like killing myself tonight.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -143,6 +163,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('I just want to end my life. Nothing matters anymore.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -154,6 +175,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('I want to die. There is no hope left.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -165,6 +187,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('I have been engaging in self-harm behaviors recently.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -176,6 +199,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('I have been engaging in self harm behaviors recently.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -191,6 +215,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('Merasa cemas itu normal. Coba tarik napas dalam-dalam dan bicara dengan teman.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -202,6 +227,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('Kamu hebat sudah bertahan sejauh ini. Jangan menyerah!');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -213,6 +239,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('You are strong and capable. Keep going, things will get better.');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
@@ -228,6 +255,7 @@ describe('Safety Guardrail — regexMatch plugin (crisis detection)', () => {
     const context = makeContext('');
     const parameters: PluginParameters = {
       rule: '(bunuh diri|ingin mati|gak.*tahan|akhiri hidup|menyakiti diri|self.?harm|suicide|killing myself|end my life|want to die)',
+      flags: 'i',
       not: false,
     };
     const result = await regexMatchHandler(context, parameters, mockEventType);
