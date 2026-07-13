@@ -15,6 +15,7 @@ import { MCP_ERROR_CODES } from './types/mcp';
 import type { SyncConfig, ChangedFile } from './types/github';
 import type { ToolCallResult } from './types/mcp';
 import { MemoryFabricService } from './services/memory-fabric-service';
+import { mintServiceToken } from './lib/service-token';
 
 export interface Env {
   OKF_KV: KVNamespace;
@@ -31,6 +32,7 @@ export interface Env {
   SYNC_TOKEN?: string;
   MCP_API_KEY?: string;
   MEMORY_FABRIC_URL?: string;
+  SERVICE_JWT_SECRET?: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -54,8 +56,12 @@ function buildServices(c: { env: Env }): ToolServices {
     token: c.env.GITHUB_TOKEN || '',
   };
   const syncService = new SyncService(store, syncConfig);
+  const secret = c.env.SERVICE_JWT_SECRET;
   const memoryFabric = c.env.MEMORY_FABRIC_URL
-    ? new MemoryFabricService({ baseUrl: c.env.MEMORY_FABRIC_URL })
+    ? new MemoryFabricService({
+        baseUrl: c.env.MEMORY_FABRIC_URL,
+        mintToken: secret ? (tenantSlug) => mintServiceToken(tenantSlug, secret) : undefined,
+      })
     : undefined;
   return { docService, searchService, graphService, syncService, memoryFabric };
 }

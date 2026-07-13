@@ -2,7 +2,7 @@ import type { ToolCallResult } from '../types/mcp';
 
 export interface MemoryFabricConfig {
   baseUrl: string;
-  apiKey?: string;
+  mintToken?: (tenantSlug: string) => Promise<string>;
 }
 
 export class MemoryFabricService {
@@ -15,7 +15,10 @@ export class MemoryFabricService {
   private async proxy(tool: string, args: Record<string, unknown>): Promise<{ result?: unknown; error?: string }> {
     const url = this.config.baseUrl.replace(/\/$/, '') + '/api/tool';
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (this.config.apiKey) headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+    const tenantSlug = typeof args.tenant === 'string' ? args.tenant : undefined;
+    if (this.config.mintToken && tenantSlug) {
+      headers['Authorization'] = `Bearer ${await this.config.mintToken(tenantSlug)}`;
+    }
 
     const res = await fetch(url, {
       method: 'POST',
