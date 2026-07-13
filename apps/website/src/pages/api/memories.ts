@@ -10,7 +10,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
     const limit = parseInt(url.searchParams.get("limit") || "20", 10)
     const offset = parseInt(url.searchParams.get("offset") || "0", 10)
 
-    const result = await callMemoryTool("memory_search", {
+    const result = await callMemoryTool(tenant, "memory_search", {
       tenant,
       query: search || "",
       limit,
@@ -40,7 +40,7 @@ export const DELETE: APIRoute = async ({ url, locals }) => {
         headers: { "Content-Type": "application/json" },
       })
     }
-    const result = await callMemoryTool("memory_delete", { tenant, memory_id: id })
+    const result = await callMemoryTool(tenant, "memory_delete", { tenant, memory_id: id })
     return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

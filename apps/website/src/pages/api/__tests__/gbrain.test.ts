@@ -25,7 +25,7 @@ describe("GET /api/gbrain", () => {
     const response = await GET({ url, locals: { session: { tenantSlug: "test-tenant" } } })
     const body = await response.json()
 
-    expect(mockCallMemoryTool).toHaveBeenCalledWith("gbrain_list", {
+    expect(mockCallMemoryTool).toHaveBeenCalledWith("test-tenant", "gbrain_list", {
       tenant: "test-tenant",
     })
     expect(body.success).toBe(true)
@@ -38,7 +38,7 @@ describe("GET /api/gbrain", () => {
     const response = await GET({ url, locals: {} })
     const body = await response.json()
 
-    expect(mockCallMemoryTool).toHaveBeenCalledWith("gbrain_list", {
+    expect(mockCallMemoryTool).toHaveBeenCalledWith("default", "gbrain_list", {
       tenant: "default",
     })
     expect(body.success).toBe(true)

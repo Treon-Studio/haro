@@ -7,7 +7,7 @@ describe("GET /api/vault", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     import.meta.env.MEMORY_FABRIC_URL = "http://localhost:8771"
-    import.meta.env.MANAGEMENT_API_KEY = "test-key"
+    import.meta.env.SERVICE_JWT_SECRET = "test-service-secret"
   })
 
   it("proxies to MCP vault_list", async () => {

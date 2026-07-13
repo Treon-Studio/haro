@@ -7,7 +7,7 @@ export const GET: APIRoute = async ({ url, locals }) => {
   try {
     const tenant = locals.session?.tenantSlug || "default"
     const path = url.searchParams.get("path") || ""
-    const result = await callMemoryTool("vault_list", { tenant, path })
+    const result = await callMemoryTool(tenant, "vault_list", { tenant, path })
     return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },

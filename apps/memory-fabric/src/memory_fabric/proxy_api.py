@@ -10,6 +10,7 @@ from time import time
 from urllib.parse import unquote
 
 import httpx
+import jwt as pyjwt
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -85,9 +86,21 @@ def check_quota(tenant: str, tool: str) -> None:
 
 @app.post("/api/tool")
 async def call_tool(req: ToolRequest, request: Request):
-    require_auth(request)
+    token_tenant = require_tenant_auth(request)
     args = req.args if isinstance(req.args, dict) else {}
-    tenant = args.get("tenant") or args.get("user_id", "").split("_")[0]
+    args_tenant = args.get("tenant") or args.get("user_id", "").split("_")[0]
+    if args_tenant and args_tenant != token_tenant:
+        return JSONResponse(
+            {
+                "error": {
+                    "code": "TENANT_MISMATCH",
+                    "message": "Token tenant does not match the tenant referenced in the request",
+                }
+            },
+            status_code=403,
+        )
+    args["tenant"] = token_tenant
+    tenant = token_tenant
 
     if tenant:
         tm = get_tenant_manager()
@@ -176,6 +189,29 @@ def get_tenant_manager() -> TenantManager:
             management_api_key=os.environ.get("MANAGEMENT_API_KEY", ""),
         )
     return tenant_manager
+
+
+def require_tenant_auth(request: Request) -> str:
+    """Verify a per-tenant service JWT and return the verified tenantSlug.
+
+    Unlike require_auth, this has no "auth disabled" fallback for an unset
+    secret — this is the mechanism that proves the tenant trust boundary.
+    """
+    secret = os.environ.get("SERVICE_JWT_SECRET", "")
+    if not secret:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    auth = request.headers.get("Authorization", "")
+    if not auth.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = auth[len("Bearer "):]
+    try:
+        payload = pyjwt.decode(token, secret, algorithms=["HS256"], audience="memory-fabric")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    tenant_slug = payload.get("tenantSlug")
+    if not tenant_slug:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return tenant_slug
 
 
 def require_auth(request: Request) -> None:

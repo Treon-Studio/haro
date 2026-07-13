@@ -24,7 +24,7 @@ describe("GET /api/memories", () => {
     const response = await GET({ url, locals: {} })
     const body = await response.json()
 
-    expect(mockCallMemoryTool).toHaveBeenCalledWith("memory_search", {
+    expect(mockCallMemoryTool).toHaveBeenCalledWith("default", "memory_search", {
       tenant: "default",
       query: "hello",
       limit: 10,
@@ -41,6 +41,7 @@ describe("GET /api/memories", () => {
     await GET({ url, locals: { session: { tenantSlug: "custom-tenant" } } })
 
     expect(mockCallMemoryTool).toHaveBeenCalledWith(
+      "custom-tenant",
       "memory_search",
       expect.objectContaining({ tenant: "custom-tenant" }),
     )
@@ -67,7 +68,7 @@ describe("DELETE /api/memories", () => {
     const response = await DELETE({ url, locals: { session: { tenantSlug: "foo" } } })
     const body = await response.json()
 
-    expect(mockCallMemoryTool).toHaveBeenCalledWith("memory_delete", {
+    expect(mockCallMemoryTool).toHaveBeenCalledWith("foo", "memory_delete", {
       tenant: "foo",
       memory_id: "mem_123",
     })

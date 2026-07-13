@@ -6,7 +6,7 @@ export const prerender = false
 export const GET: APIRoute = async ({ url, locals }) => {
   try {
     const tenant = locals.session?.tenantSlug || "default"
-    const result = await callMemoryTool("gbrain_list", { tenant })
+    const result = await callMemoryTool(tenant, "gbrain_list", { tenant })
     return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
