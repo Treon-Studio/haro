@@ -161,11 +161,11 @@ git commit -m "fix: require auth and restrict CORS on /api/tool endpoint"
 - Consumes: `company_memberships` lookup by `userId`
 - Produces: `context.locals.session` gains a resolved `tenantSlug` (and `companyId`); all tenant-scoped API routes derive tenant from `locals.session`, not client query params
 
-- [ ] **Step 1:** Resolution strategy (decided — implement as-is, no further decision needed): resolve `tenantSlug` **server-side from `company_memberships` on each request**, not embedded in the `tenang-session` JWT. Rationale: session JWTs already exist and are small; a per-request DB lookup is simpler to keep correct (no stale tenant on JWT until re-login) and there's no measured load concern forcing the cheaper-but-staler JWT-embed alternative — revisit only if profiling later shows this lookup is a real bottleneck.
-- [ ] **Step 2:** Add a small resolver (e.g. `getTenantForSession(session)`) in `src/lib/auth/` that looks up the user's active `company_memberships` row and returns the linked tenant slug.
-- [ ] **Step 3:** Replace `const tenant = "default"` in `dashboard/index.astro` and the `?tenant=` query-param reads in `api/memories.ts`/`api/gbrain.ts`/`api/vault.ts` with calls to this resolver via `locals.session`.
-- [ ] **Step 4:** Test — log in as two different users/companies, confirm each only sees their own tenant's memories/gbrain/vault via the dashboard.
-- [ ] **Step 5:** Commit.
+- [x] **Step 1:** Resolution strategy (decided — implement as-is, no further decision needed): resolve `tenantSlug` **server-side from `company_memberships` on each request**, not embedded in the `tenang-session` JWT. Rationale: session JWTs already exist and are small; a per-request DB lookup is simpler to keep correct (no stale tenant on JWT until re-login) and there's no measured load concern forcing the cheaper-but-staler JWT-embed alternative — revisit only if profiling later shows this lookup is a real bottleneck.
+- [x] **Step 2:** Add a small resolver (e.g. `getTenantForSession(session)`) in `src/lib/auth/` that looks up the user's active `company_memberships` row and returns the linked tenant slug.
+- [x] **Step 3:** Replace `const tenant = "default"` in `dashboard/index.astro` and the `?tenant=` query-param reads in `api/memories.ts`/`api/gbrain.ts`/`api/vault.ts` with calls to this resolver via `locals.session`.
+- [x] **Step 4:** Test — log in as two different users/companies, confirm each only sees their own tenant's memories/gbrain/vault via the dashboard.
+- [x] **Step 5:** Commit.
 
 ### Task 0.3: Define the shared identity contract
 
@@ -177,8 +177,8 @@ git commit -m "fix: require auth and restrict CORS on /api/tool endpoint"
 **Interfaces:**
 - Produces: `{ userId: string, tenantSlug: string, companyId?: string, role: string }` type, used by Task 0.2's resolver and by Phase 1+ tool-calling code
 
-- [ ] **Step 1:** Define the type and a short doc comment on where it's populated from (session + `company_memberships`).
-- [ ] **Step 2:** Commit.
+- [x] **Step 1:** Define the type and a short doc comment on where it's populated from (session + `company_memberships`).
+- [x] **Step 2:** Commit.
 
 ### Task 0.4: Per-tenant service token (replaces shared `MANAGEMENT_API_KEY` for tenant-scoped calls)
 
@@ -236,13 +236,13 @@ git commit -m "fix: require auth and restrict CORS on /api/tool endpoint"
 
 So: `chat.ts` sends `x-haro-config-id` pointing at one Haro-managed config with a `targets`/`strategy: fallback` list across providers (this is the gateway's actual value-add), and does not need `x-haro-virtual-key` at all for this path unless per-tenant rate-limiting is also wanted (optional — can be added later without changing this task's shape). The client only sends `model` (or a Haro-internal model alias), never a provider or key.
 
-- [ ] **Step 1:** Read `apps/haro-gateway/src/handlers/adminConfigsHandler.ts` and `apps/haro-gateway/src/config/types.ts`'s `ConfigPresetRecord` to confirm the exact JSON shape `gateway_configs.config` expects (Portkey-style `{strategy: {mode: "fallback"}, targets: [{provider, api_key or virtual_key, ...}, ...]}` is the expected shape for this gateway fork — verify against an existing row if one exists, or against `adminConfigsHandler.ts`'s validation logic if not).
-- [ ] **Step 2:** Create one `gateway_configs` row (e.g. slug `haro-assistant-default`) encoding the provider fallback chain Haro wants for the assistant (e.g. primary + 1-2 fallbacks) via the admin API/UI. Store server-side provider credentials as gateway virtual keys referenced by that config's targets (not raw keys in the config blob, if the config schema supports virtual-key references — check Step 1's findings).
-- [ ] **Step 3:** Implement the reroute: `chat.ts` calls `${GATEWAY_URL}/v1/chat/completions` with header `x-haro-config-id: haro-assistant-default`, no `Authorization`/provider key from the client — the gateway resolves credentials server-side.
-- [ ] **Step 4:** Remove the BYOK code paths: delete `clientApiKey` handling in `chat.ts`, delete the "Providers" tab in `SettingsDialog.tsx`, delete `loadApiKey`/`saveApiKey` from `blocks/chat/config/providers.ts`.
-- [ ] **Step 5:** Preserve existing behavior for image attachments (`contentBlocks` handling, `chat.ts` current lines ~44-53) and the `tools`/`tool_choice` block for `webSearch` — confirm the gateway passes both through unchanged (already verified in the design spec: `chatCompletionsHandler.ts` is pass-through).
-- [ ] **Step 6:** Test — existing behavior parity: send a normal chat message and a message with an image attachment, confirm streamed response is identical in shape to pre-change behavior. Add/update tests in `apps/website/src/pages/api/__tests__/` mocking the gateway endpoint instead of the provider endpoint. Add a test confirming no `apiKey`/`clientApiKey` field is read from the request body anymore.
-- [ ] **Step 7:** Commit (note: the `gateway_configs` row from Step 2 is operational/data setup, not code — document the exact config JSON used in the commit message or a short ops note, since it can't be captured by a code diff alone).
+- [x] **Step 1:** Read `apps/haro-gateway/src/handlers/adminConfigsHandler.ts` and `apps/haro-gateway/src/config/types.ts`'s `ConfigPresetRecord` to confirm the exact JSON shape `gateway_configs.config` expects (Portkey-style `{strategy: {mode: "fallback"}, targets: [{provider, api_key or virtual_key, ...}, ...]}` is the expected shape for this gateway fork — verify against an existing row if one exists, or against `adminConfigsHandler.ts`'s validation logic if not).
+- [x] **Step 2:** Create one `gateway_configs` row (e.g. slug `haro-assistant-default`) encoding the provider fallback chain Haro wants for the assistant (e.g. primary + 1-2 fallbacks) via the admin API/UI. Store server-side provider credentials as gateway virtual keys referenced by that config's targets (not raw keys in the config blob, if the config schema supports virtual-key references — check Step 1's findings).
+- [x] **Step 3:** Implement the reroute: `chat.ts` calls `${GATEWAY_URL}/v1/chat/completions` with header `x-haro-config-id: haro-assistant-default`, no `Authorization`/provider key from the client — the gateway resolves credentials server-side.
+- [x] **Step 4:** Remove the BYOK code paths: delete `clientApiKey` handling in `chat.ts`, delete the "Providers" tab in `SettingsDialog.tsx`, delete `loadApiKey`/`saveApiKey` from `blocks/chat/config/providers.ts`.
+- [x] **Step 5:** Preserve existing behavior for image attachments (`contentBlocks` handling, `chat.ts` current lines ~44-53) and the `tools`/`tool_choice` block for `webSearch` — confirm the gateway passes both through unchanged (already verified in the design spec: `chatCompletionsHandler.ts` is pass-through).
+- [x] **Step 6:** Test — existing behavior parity: send a normal chat message and a message with an image attachment, confirm streamed response is identical in shape to pre-change behavior. Add/update tests in `apps/website/src/pages/api/__tests__/` mocking the gateway endpoint instead of the provider endpoint. Add a test confirming no `apiKey`/`clientApiKey` field is read from the request body anymore.
+- [x] **Step 7:** Commit (note: the `gateway_configs` row from Step 2 is operational/data setup, not code — document the exact config JSON used in the commit message or a short ops note, since it can't be captured by a code diff alone).
 
 ### Task 1.2: Build the portable tool-calling loop module
 
@@ -400,10 +400,10 @@ The `channel` column and `user_id`-keyed index are what let Task 5.4 (voice) wri
 **Interfaces:**
 - A `beforeRequestHook`/`afterRequestHook` guardrail function, attached to the virtual key or config preset the assistant loop uses, so it runs on every request through that key without website/voice needing to opt in per-call
 
-- [ ] **Step 1:** Decide the detection mechanism for v1: start with a keyword/regex list (reuse `plugins/default/regexMatch.ts` directly with a configured pattern, rather than writing a new plugin, if a single regex is sufficient for launch) vs. a dedicated small plugin that can grow more nuanced logic later. Prefer reusing `regexMatch` via config first — only build a bespoke plugin if regex genuinely can't express the check.
-- [ ] **Step 2:** If reusing `regexMatch`: attach it via the config preset (`configPresetResolver.ts`) used by the assistant's virtual key, with `onFailure` producing a `GuardrailCheckResult` the caller can read. If building bespoke: scaffold `manifest.json` + handler following `plugins/default`'s exact structure, register it in the plugin loader (check `apps/haro-gateway/plugins/index.ts` or equivalent for how `plugins/default` gets registered, and mirror that for the new plugin id).
-- [ ] **Step 3:** Test using the existing pattern in `plugins/default/default.test.ts` as a reference for how gateway plugin tests are structured in this repo.
-- [ ] **Step 4:** Commit.
+- [x] **Step 1:** Decide the detection mechanism for v1: start with a keyword/regex list (reuse `plugins/default/regexMatch.ts` directly with a configured pattern, rather than writing a new plugin, if a single regex is sufficient for launch) vs. a dedicated small plugin that can grow more nuanced logic later. Prefer reusing `regexMatch` via config first — only build a bespoke plugin if regex genuinely can't express the check.
+- [x] **Step 2:** If reusing `regexMatch`: attach it via the config preset (`configPresetResolver.ts`) used by the assistant's virtual key, with `onFailure` producing a `GuardrailCheckResult` the caller can read. If building bespoke: scaffold `manifest.json` + handler following `plugins/default`'s exact structure, register it in the plugin loader (check `apps/haro-gateway/plugins/index.ts` or equivalent for how `plugins/default` gets registered, and mirror that for the new plugin id).
+- [x] **Step 3:** Test using the existing pattern in `plugins/default/default.test.ts` as a reference for how gateway plugin tests are structured in this repo.
+- [x] **Step 4:** Commit.
 
 ### Task 3.2: Wire detected risk to the safety domain
 
