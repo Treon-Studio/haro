@@ -90,14 +90,13 @@ function loadActiveId(): string | null {
 async function fetchAIResponseFollowup(
   messages: any[],
   model: string,
-  provider: string,
   onChunk: (chunk: string) => void,
   signal: AbortSignal,
 ): Promise<void> {
   const response = await fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages, model, provider, webSearch: false }),
+    body: JSON.stringify({ messages, model, webSearch: false }),
     signal,
   });
 
@@ -214,7 +213,6 @@ async function executeImageGeneration(prompt: string, aspectRatio?: string): Pro
 async function fetchAIResponse(
   messages: Message[],
   model: string,
-  provider: string,
   onChunk: (chunk: string) => void,
   onToolCall: (toolCallId: string, name: string, args: string) => void,
   onToolDone: () => void,
@@ -222,7 +220,7 @@ async function fetchAIResponse(
   signal: AbortSignal,
 ): Promise<void> {
   // Build request with optional web search tools and file attachments
-  const body: Record<string, any> = { messages, model, provider, webSearch };
+  const body: Record<string, any> = { messages, model, webSearch };
 
   const response = await fetch('/api/chat', {
     method: 'POST',
@@ -595,7 +593,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
         await fetchAIResponse(
           currentConvMessages,
           model.id,
-          model.provider,
           (chunk) => {
             // Skip chunks while a tool call is being executed
             if (isToolCallRef.current) return;
@@ -690,7 +687,6 @@ export function useChat({ initialChatId }: { initialChatId?: string } = {}) {
                   { role: 'tool' as const, content: toolResult, tool_call_id: toolCallId },
                 ],
                 model.id,
-                model.provider,
                 (chunk) => {
                   setConversations((prev) =>
                     prev.map((c) =>
