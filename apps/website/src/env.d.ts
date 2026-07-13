@@ -10,6 +10,8 @@ declare global {
         userId: string
         email: string
         sessionId: string
+        tenantSlug: string
+        companyId?: string
       } | null
       logger: LoggerService
       requestId: string

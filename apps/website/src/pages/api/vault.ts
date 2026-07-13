@@ -3,9 +3,9 @@ import { callMemoryTool } from "@/lib/memory-fabric"
 
 export const prerender = false
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   try {
-    const tenant = url.searchParams.get("tenant") || "default"
+    const tenant = locals.session?.tenantSlug || "default"
     const path = url.searchParams.get("path") || ""
     const result = await callMemoryTool("vault_list", { tenant, path })
     return new Response(JSON.stringify({ success: true, data: result }), {

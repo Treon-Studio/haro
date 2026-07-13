@@ -3,17 +3,14 @@ import BaseLayout from '@/layouts/BaseLayout.astro'
 import { MemoryList } from '@/../blocks/dashboard/memory-list'
 import { MemoryGraph } from '@/../blocks/dashboard/memory-graph'
 import VaultBrowser from '@/../blocks/dashboard/vault-browser'
-import { verifySession } from '@/lib/auth/session'
 
 export const prerender = false
 
-const cookieHeader = Astro.request.headers.get('cookie') || ''
-const sessionCookie = cookieHeader.split(';').map(c => c.trim()).find(c => c.startsWith('tenang-session='))?.split('=')[1]
-const session = sessionCookie ? await verifySession(sessionCookie) : null
+const session = Astro.locals.session
 if (!session) {
   return Astro.redirect('/login')
 }
-const tenant = "default"
+const tenant = session.tenantSlug
 const isAdmin = session.role === 'admin'
 ---
 

@@ -1,5 +1,5 @@
 import { defineMiddleware } from "astro/middleware"
-import { verifySession } from "@/lib/auth/session"
+import { verifySession, getTenantForSession } from "@/lib/auth/session"
 import { ROUTES } from "@/shared/constants/api.constants"
 
 const PROTECTED_PATHS: readonly string[] = ROUTES.PROTECTED
@@ -16,11 +16,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const sessionToken = context.cookies.get("tenang-session")?.value
   const sessionPayload = sessionToken ? await verifySession(sessionToken) : null
 
-  context.locals.session = sessionPayload
+  const session = sessionPayload
     ? {
         userId: sessionPayload.userId,
         email: sessionPayload.email,
         sessionId: sessionToken ?? "",
+      }
+    : null
+
+  const tenantInfo = await getTenantForSession(session)
+  context.locals.session = session
+    ? {
+        ...session,
+        ...tenantInfo,
       }
     : null
 

@@ -3,9 +3,9 @@ import { callMemoryTool } from "@/lib/memory-fabric"
 
 export const prerender = false
 
-export const GET: APIRoute = async ({ url }) => {
+export const GET: APIRoute = async ({ url, locals }) => {
   try {
-    const tenant = url.searchParams.get("tenant") || "default"
+    const tenant = locals.session?.tenantSlug || "default"
     const search = url.searchParams.get("search") || undefined
     const limit = parseInt(url.searchParams.get("limit") || "20", 10)
     const offset = parseInt(url.searchParams.get("offset") || "0", 10)
@@ -30,10 +30,10 @@ export const GET: APIRoute = async ({ url }) => {
   }
 }
 
-export const DELETE: APIRoute = async ({ url }) => {
+export const DELETE: APIRoute = async ({ url, locals }) => {
   try {
     const id = url.searchParams.get("id")
-    const tenant = url.searchParams.get("tenant") || "default"
+    const tenant = locals.session?.tenantSlug || "default"
     if (!id) {
       return new Response(JSON.stringify({ success: false, error: "Missing id parameter" }), {
         status: 400,

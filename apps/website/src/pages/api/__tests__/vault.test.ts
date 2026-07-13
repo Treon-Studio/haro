@@ -17,8 +17,8 @@ describe("GET /api/vault", () => {
     })
 
     const { GET } = await import("../vault")
-    const url = new URL("http://localhost:4321/api/vault?tenant=test-tenant")
-    const res = await GET({ url } as any)
+    const url = new URL("http://localhost:4321/api/vault")
+    const res = await GET({ url, locals: { session: { tenantSlug: "test-tenant" } } } as any)
     const json = await res.json()
 
     expect(mockFetch).toHaveBeenCalledWith(

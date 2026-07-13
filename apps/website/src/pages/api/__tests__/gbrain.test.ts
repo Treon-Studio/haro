@@ -21,8 +21,8 @@ describe("GET /api/gbrain", () => {
       result: [{ slug: "test", title: "Test Page" }],
     })
 
-    const url = new URL("http://localhost/api/gbrain?tenant=test-tenant")
-    const response = await GET({ url })
+    const url = new URL("http://localhost/api/gbrain")
+    const response = await GET({ url, locals: { session: { tenantSlug: "test-tenant" } } })
     const body = await response.json()
 
     expect(mockCallMemoryTool).toHaveBeenCalledWith("gbrain_list", {
@@ -35,7 +35,7 @@ describe("GET /api/gbrain", () => {
     mockCallMemoryTool.mockResolvedValueOnce({ result: [] })
 
     const url = new URL("http://localhost/api/gbrain")
-    const response = await GET({ url })
+    const response = await GET({ url, locals: {} })
     const body = await response.json()
 
     expect(mockCallMemoryTool).toHaveBeenCalledWith("gbrain_list", {
@@ -48,7 +48,7 @@ describe("GET /api/gbrain", () => {
     mockCallMemoryTool.mockRejectedValueOnce(new Error("connection refused"))
 
     const url = new URL("http://localhost/api/gbrain")
-    const response = await GET({ url })
+    const response = await GET({ url, locals: {} })
     const body = await response.json()
 
     expect(response.status).toBe(500)

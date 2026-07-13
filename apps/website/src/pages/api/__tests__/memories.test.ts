@@ -21,7 +21,7 @@ describe("GET /api/memories", () => {
     mockCallMemoryTool.mockResolvedValueOnce({ rows: [{ id: "1", content: "test" }], total: 1 })
 
     const url = new URL("http://localhost/api/memories?search=hello&limit=10&offset=0")
-    const response = await GET({ url })
+    const response = await GET({ url, locals: {} })
     const body = await response.json()
 
     expect(mockCallMemoryTool).toHaveBeenCalledWith("memory_search", {
@@ -34,11 +34,11 @@ describe("GET /api/memories", () => {
     expect(body.data).toEqual({ rows: [{ id: "1", content: "test" }], total: 1 })
   })
 
-  it("passes tenant param through", async () => {
+  it("uses tenant from session", async () => {
     mockCallMemoryTool.mockResolvedValueOnce({ rows: [] })
 
-    const url = new URL("http://localhost/api/memories?tenant=custom-tenant")
-    await GET({ url })
+    const url = new URL("http://localhost/api/memories")
+    await GET({ url, locals: { session: { tenantSlug: "custom-tenant" } } })
 
     expect(mockCallMemoryTool).toHaveBeenCalledWith(
       "memory_search",
@@ -50,7 +50,7 @@ describe("GET /api/memories", () => {
     mockCallMemoryTool.mockRejectedValueOnce(new Error("connection refused"))
 
     const url = new URL("http://localhost/api/memories")
-    const response = await GET({ url })
+    const response = await GET({ url, locals: {} })
     const body = await response.json()
 
     expect(response.status).toBe(500)
@@ -63,8 +63,8 @@ describe("DELETE /api/memories", () => {
   it("calls memory_delete with id and tenant", async () => {
     mockCallMemoryTool.mockResolvedValueOnce({ success: true })
 
-    const url = new URL("http://localhost/api/memories?id=mem_123&tenant=foo")
-    const response = await DELETE({ url })
+    const url = new URL("http://localhost/api/memories?id=mem_123")
+    const response = await DELETE({ url, locals: { session: { tenantSlug: "foo" } } })
     const body = await response.json()
 
     expect(mockCallMemoryTool).toHaveBeenCalledWith("memory_delete", {
@@ -76,7 +76,7 @@ describe("DELETE /api/memories", () => {
 
   it("returns 400 when id is missing", async () => {
     const url = new URL("http://localhost/api/memories")
-    const response = await DELETE({ url })
+    const response = await DELETE({ url, locals: {} })
     const body = await response.json()
 
     expect(response.status).toBe(400)
