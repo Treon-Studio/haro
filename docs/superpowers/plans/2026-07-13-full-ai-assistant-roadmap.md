@@ -151,7 +151,7 @@ git commit -m "fix: require auth and restrict CORS on /api/tool endpoint"
 
 ### Task 0.2: Thread tenant identity through the website session
 
-**Depends on:** none (independent of 0.0/0.1). Parallelizable with Task 0.3 — coordinate on field names (`tenantSlug`, `companyId`) since 0.3's type must match what this task's resolver actually returns.
+**Depends on:** none (independent of 0.0/0.1). Parallelizable with Task 0.3 — coordinate on field names (`tenantSlug`, `companyId`) since 0.3's type must match what this task's resolver actually returns. **Status: already complete** (commit `0c55e27`) — kept here for context only, do not re-dispatch.
 
 **Files:**
 - Modify: `apps/website/src/lib/auth/session.ts`, `apps/website/src/middleware/auth.ts`
@@ -169,7 +169,7 @@ git commit -m "fix: require auth and restrict CORS on /api/tool endpoint"
 
 ### Task 0.3: Define the shared identity contract
 
-**Depends on:** none (independent of 0.0/0.1). Parallelizable with Task 0.2 — see 0.2's note on coordinating field names.
+**Depends on:** none (independent of 0.0/0.1). Parallelizable with Task 0.2 — see 0.2's note on coordinating field names. **Status: already complete** (commit `0747f71`) — kept here for context only, do not re-dispatch.
 
 **Files:**
 - Create: `apps/website/src/shared/types/identity.ts` (or extend `src/shared/types/`)
@@ -219,7 +219,7 @@ git commit -m "fix: require auth and restrict CORS on /api/tool endpoint"
 
 ### Task 1.1: Reroute `api/chat.ts` through `haro-gateway`
 
-**Depends on:** none from Phase 0 — this task's routing change (chat.ts → gateway via `x-haro-config-id`) doesn't touch tenant-scoped auth, so it has no hard dependency on Task 0.0-0.4 and could in principle be worked in parallel with Phase 0. Sequenced first in Phase 1 by convention, not by a technical requirement.
+**Depends on:** none from Phase 0 — this task's routing change (chat.ts → gateway via `x-haro-config-id`) doesn't touch tenant-scoped auth, so it has no hard dependency on Task 0.0-0.4 and could in principle be worked in parallel with Phase 0. Sequenced first in Phase 1 by convention, not by a technical requirement. **Status: already complete** (commits `5d73a2b..f3bdbda`) — kept here for context only, do not re-dispatch.
 
 **Files:**
 - Modify: `apps/website/src/pages/api/chat.ts`
@@ -391,7 +391,7 @@ The `channel` column and `user_id`-keyed index are what let Task 5.4 (voice) wri
 
 ### Task 3.1: Gateway-level risk-detection plugin
 
-**Depends on:** none — pure `haro-gateway` plugin work, independent of website/Phase 0-2 changes. Can be worked any time, in parallel with Phase 1/2.
+**Depends on:** none — pure `haro-gateway` plugin work, independent of website/Phase 0-2 changes. Can be worked any time, in parallel with Phase 1/2. **Status: already complete** (commits `d424d13..a889606`) — kept here for context only, do not re-dispatch.
 
 **Files:**
 - Create: `apps/haro-gateway/plugins/haro-safety/` (new plugin directory, sibling to `plugins/default`) — `manifest.json` + a handler file, following the exact shape of `plugins/default/regexMatch.ts` (a `PluginHandler` returning `{error, verdict, data}`) and `plugins/default/manifest.json`'s function-declaration format
