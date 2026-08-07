@@ -1,0 +1,68 @@
+.haro-logo {
+  display: grid;
+  place-items: center;
+  inline-size: fit-content;
+}
+
+.haro-logo--screen {
+  min-block-size: 100vh;
+  inline-size: 100%;
+  overflow: hidden;
+}
+
+.haro-logo--background {
+  background-color: #d7d72e;
+  background-image: radial-gradient(
+    circle,
+    rgba(35, 30, 30, 0.16) 1.2px,
+    transparent 1.3px
+  );
+  background-position: 0 0;
+  background-size: 37px 37px;
+}
+
+.haro-logo__mark {
+  display: block;
+  inline-size: min(466px, calc(100vw - 32px));
+  block-size: auto;
+  overflow: visible;
+}
+
+.haro-logo--compact {
+  inline-size: 1.5rem;
+}
+
+.haro-logo--compact .haro-logo__mark {
+  inline-size: 100%;
+  block-size: auto;
+  max-inline-size: 100%;
+}
+
+.haro-logo__ink {
+  fill: currentColor;
+}
+
+@keyframes haro-logo-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.haro-logo--pulse .haro-logo__mark {
+  animation: haro-logo-pulse 1.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haro-logo animate {
+    display: none;
+  }
+
+  .haro-logo--pulse .haro-logo__mark {
+    animation: none;
+    opacity: 0.8;
+  }
+}

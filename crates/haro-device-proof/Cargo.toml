@@ -1,0 +1,21 @@
+[package]
+name = "haro-device-proof"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Deterministic CBOR/Ed25519 Device Proof v1 for Haro"
+
+[dependencies]
+minicbor = { version = "=0.25.1", features = ["derive", "std"] }
+ed25519-dalek = { version = "3.0.0-rc.0", features = ["rand_core", "zeroize"] }
+base64 = "0.22"
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+uuid = { workspace = true, features = ["v4", "v7", "serde"] }
+thiserror = { workspace = true }
+hex = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+rand = { workspace = true }
