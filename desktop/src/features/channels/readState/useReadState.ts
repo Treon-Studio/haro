@@ -1,0 +1,117 @@
+import * as React from "react";
+import {
+  ReadStateManager,
+  type ContextParentResolver,
+} from "@/features/channels/readState/readStateManager";
+
+const noopGetTimestamp = () => null;
+const noopMarkRead = () => {};
+const noopDrainAdvances = (): ReadonlySet<string> => new Set<string>();
+const noopSetResolver = () => {};
+
+/**
+ * React hook that creates and manages a ReadStateManager instance.
+ * Returns no-op functions when pubkey is not available.
+ */
+export function useReadState(pubkey: string | undefined) {
+  const [readStateVersion, forceUpdate] = React.useReducer(
+    (x: number) => x + 1,
+    0,
+  );
+  const [initializedPubkey, setInitializedPubkey] = React.useState<
+    string | null
+  >(null);
+  const managerRef = React.useRef<ReadStateManager | null>(null);
+
+  // Create/destroy manager when pubkey becomes available/changes
+  React.useEffect(() => {
+    setInitializedPubkey(null);
+    if (!pubkey) return;
+
+    let isCancelled = false;
+    const manager = new ReadStateManager(pubkey);
+    managerRef.current = manager;
+
+    const unsubscribe = manager.subscribe(() => {
+      forceUpdate();
+    });
+
+    void manager.initialize().finally(() => {
+      if (!isCancelled) {
+        setInitializedPubkey(pubkey);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+      unsubscribe();
+      manager.destroy();
+      managerRef.current = null;
+    };
+  }, [pubkey]);
+
+  const getEffectiveTimestamp = React.useCallback(
+    (contextId: string): number | null => {
+      return managerRef.current?.getEffectiveTimestamp(contextId) ?? null;
+    },
+    [],
+  );
+
+  const getOwnTimestamp = React.useCallback(
+    (contextId: string): number | null => {
+      return managerRef.current?.getOwnTimestamp(contextId) ?? null;
+    },
+    [],
+  );
+
+  const markContextRead = React.useCallback(
+    (contextId: string, unixTimestamp: number): void => {
+      managerRef.current?.markContextRead(contextId, unixTimestamp);
+    },
+    [],
+  );
+
+  const seedContextRead = React.useCallback(
+    (contextId: string, unixTimestamp: number): void => {
+      managerRef.current?.seedContextRead(contextId, unixTimestamp);
+    },
+    [],
+  );
+
+  const drainSyncedAdvances = React.useCallback((): ReadonlySet<string> => {
+    return managerRef.current?.drainSyncedAdvances() ?? new Set<string>();
+  }, []);
+
+  const setContextParentResolver = React.useCallback(
+    (resolver: ContextParentResolver | null): void => {
+      managerRef.current?.setContextParentResolver(resolver);
+    },
+    [],
+  );
+
+  const isReady = Boolean(pubkey && initializedPubkey === pubkey);
+
+  if (!pubkey) {
+    return {
+      getEffectiveTimestamp: noopGetTimestamp,
+      isReady: false,
+      markContextRead: noopMarkRead,
+      seedContextRead: noopMarkRead,
+      drainSyncedAdvances: noopDrainAdvances,
+      setContextParentResolver: noopSetResolver,
+      readStateVersion: 0,
+      getOwnTimestamp: noopGetTimestamp,
+    };
+  }
+
+  return {
+    getEffectiveTimestamp,
+    isReady,
+    markContextRead,
+    seedContextRead,
+    drainSyncedAdvances,
+    setContextParentResolver,
+    readStateVersion,
+    getOwnTimestamp,
+  };
+}

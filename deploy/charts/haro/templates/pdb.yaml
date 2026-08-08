@@ -1,0 +1,18 @@
+{{- include "haro.validate" . -}}
+{{- if and .Values.podDisruptionBudget.enabled (gt (include "haro.minimumReplicas" . | int) 1) -}}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "haro.fullname" . }}
+  labels:
+    {{- include "haro.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "haro.relaySelectorLabels" . | nindent 6 }}
+  {{- if .Values.podDisruptionBudget.minAvailable }}
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable }}
+  {{- else if .Values.podDisruptionBudget.maxUnavailable }}
+  maxUnavailable: {{ .Values.podDisruptionBudget.maxUnavailable }}
+  {{- end }}
+{{- end }}
