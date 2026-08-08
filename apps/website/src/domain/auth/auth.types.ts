@@ -31,6 +31,10 @@ export type TSession = {
 export type TAuthResult = {
   readonly user: TUser
   readonly session: TSession
+  // Present only when signup was completed via an accepted invitation —
+  // carries the invitation's real company/tenant identity.
+  readonly companyId?: string
+  readonly companyName?: string
 }
 
 export type TUserDto = {
@@ -51,4 +55,9 @@ export type TAuthDto = {
     readonly expires_at: string
     readonly created_at: string
   }
+  // Present only when signup was completed via an accepted invitation —
+  // lets callers (e.g. signup.ts) distinguish "invited into an existing
+  // company" from an organic signup without re-querying.
+  readonly company_id?: string
+  readonly company_name?: string
 }

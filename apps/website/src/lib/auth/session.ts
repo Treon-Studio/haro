@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { query } from "@/lib/neon/client";
 
 // Load JWT_SECRET from environment variables, fail fast if missing
 const JWT_SECRET = import.meta.env.JWT_SECRET || (() => {
@@ -66,6 +67,44 @@ export async function verifySession(
     );
     return null;
   }
+}
+
+/**
+ * Resolves tenant information for a session from the DB.
+ * Looks up the user's active company membership and returns the linked tenant slug.
+ * Falls back to "default" when no membership is found.
+ */
+export async function getTenantForSession(
+  session: { userId: string } | null,
+): Promise<{ tenantSlug: string; companyId?: string }> {
+  if (!session?.userId) {
+    return { tenantSlug: "default" };
+  }
+
+  try {
+    const result = await query`
+      SELECT t.slug AS tenant_slug, cm.company_id
+      FROM company_memberships cm
+      JOIN tenants t ON t.company_id = cm.company_id
+      WHERE cm.user_id = ${session.userId} AND cm.status = 'active'
+      LIMIT 1
+    `;
+
+    if (result.rowCount > 0 && result.rows[0]) {
+      const row = result.rows[0];
+      return {
+        tenantSlug: row.tenant_slug as string,
+        companyId: row.company_id as string,
+      };
+    }
+  } catch (err) {
+    console.warn(
+      "Failed to resolve tenant for session:",
+      err instanceof Error ? err.message : err,
+    );
+  }
+
+  return { tenantSlug: "default" };
 }
 
 /**

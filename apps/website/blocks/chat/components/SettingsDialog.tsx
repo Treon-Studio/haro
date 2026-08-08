@@ -1,8 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { PROVIDERS, loadApiKey, saveApiKey } from '../config/providers';
 
-type Tab = 'general' | 'display' | 'providers' | 'voice' | 'beta' | 'data';
+type Tab = 'general' | 'display' | 'voice' | 'beta' | 'data';
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -42,7 +41,6 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 const TABS: { id: Tab; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'display', label: 'Display' },
-  { id: 'providers', label: 'Providers' },
   { id: 'voice', label: 'Voice' },
   { id: 'beta', label: 'Beta Features' },
   { id: 'data', label: 'Data Controls' },
@@ -64,43 +62,12 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
   const [webSearch, setWebSearch] = useState(false);
   const [codeInterp, setCodeInterp] = useState(false);
   const [improveModel, setImproveModel] = useState(true);
-  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
-  const [saved, setSaved] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    if (open) {
-      const keys: Record<string, string> = {};
-      for (const id of Object.keys(PROVIDERS)) {
-        keys[id] = loadApiKey(id);
-      }
-      setApiKeys(keys);
-      setSaved({});
-    }
-  }, [open]);
-
   // Persist display settings to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('tenang:display', JSON.stringify({ timestamps, compact, showModel, fontSize }));
     } catch { /* ignore quota errors */ }
   }, [timestamps, compact, showModel, fontSize]);
-
-  function handleKeyChange(id: string, value: string) {
-    setApiKeys(prev => ({ ...prev, [id]: value }));
-  }
-
-  function handleSaveKey(id: string) {
-    saveApiKey(id, apiKeys[id] || '');
-    setSaved(prev => ({ ...prev, [id]: true }));
-    setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 2000);
-  }
-
-  function handleRemoveKey(id: string) {
-    saveApiKey(id, '');
-    setApiKeys(prev => ({ ...prev, [id]: '' }));
-    setSaved(prev => ({ ...prev, [id]: true }));
-    setTimeout(() => setSaved(prev => ({ ...prev, [id]: false })), 2000);
-  }
 
   if (!open) return null;
 
@@ -202,85 +169,6 @@ export default function SettingsDialog({ open, onClose }: { open: boolean; onClo
                 <select style={{ width: '100%', background: '#2f2f2f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', color: '#ececec', fontSize: 13, fontFamily: "'Inter', sans-serif" }}>
                   <option>Standard (720px)</option><option>Wide (900px)</option><option>Full width</option>
                 </select>
-              </>
-            )}
-            {tab === 'providers' && (
-              <>
-                <SectionLabel>AI Providers</SectionLabel>
-                <div style={{ fontSize: 11, color: '#8e8ea0', marginBottom: 12, lineHeight: 1.5 }}>
-                  Enter API keys for the providers you want to use. Keys are stored locally in your browser and sent with each request — they are never saved on our server.
-                </div>
-                {Object.entries(PROVIDERS).map(([id, provider]) => (
-                  <div key={id} style={{
-                    padding: '12px 14px', marginBottom: 8, borderRadius: 10,
-                    background: '#2a2a2a', border: '1px solid rgba(255,255,255,0.06)',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 600, color: '#ececec' }}>{provider.name}</div>
-                        <div style={{ fontSize: 11, color: '#5a5a6b' }}>
-                          {provider.baseUrl}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                        {apiKeys[id] && (
-                          <span style={{ fontSize: 11, color: '#10a37f', fontWeight: 500 }}>
-                            ● Configured
-                          </span>
-                        )}
-                        {saved[id] && (
-                          <span style={{ fontSize: 11, color: '#10a37f', fontWeight: 500 }}>
-                            ✓ Saved
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6 }}>
-                      <input
-                        type="password"
-                        value={apiKeys[id] || ''}
-                        onChange={e => handleKeyChange(id, e.target.value)}
-                        placeholder={`Enter ${provider.name} API key`}
-                        style={{
-                          flex: 1, padding: '8px 10px', borderRadius: 7,
-                          background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)',
-                          color: '#ececec', fontSize: 12, outline: 'none',
-                          fontFamily: "'Inter', sans-serif",
-                        }}
-                      />
-                      <button
-                        onClick={() => handleSaveKey(id)}
-                        style={{
-                          padding: '8px 14px', borderRadius: 7, border: 'none',
-                          background: apiKeys[id] ? '#10a37f' : '#404040',
-                          color: apiKeys[id] ? '#fff' : '#8e8ea0',
-                          fontSize: 12, fontWeight: 500, cursor: apiKeys[id] ? 'pointer' : 'not-allowed',
-                          fontFamily: "'Inter', sans-serif",
-                        }}
-                        disabled={!apiKeys[id]}
-                      >
-                        Save
-                      </button>
-                      {apiKeys[id] && (
-                        <button
-                          onClick={() => handleRemoveKey(id)}
-                          style={{
-                            padding: '8px 10px', borderRadius: 7, border: '1px solid rgba(255,80,80,0.3)',
-                            background: 'transparent', color: '#ff8080',
-                            fontSize: 12, cursor: 'pointer',
-                            fontFamily: "'Inter', sans-serif",
-                          }}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <SectionLabel>Custom Provider</SectionLabel>
-                <div style={{ fontSize: 11, color: '#8e8ea0', marginBottom: 8, lineHeight: 1.5 }}>
-                  Coming soon: add custom OpenAI-compatible endpoints (e.g. local LLM, Ollama, vLLM).
-                </div>
               </>
             )}
             {tab === 'voice' && (

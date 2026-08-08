@@ -1,0 +1,11 @@
+; apps/memory-fabric/deploy/resource-snapshot.timer
+[Unit]
+Description=Run resource snapshot daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=1800
+
+[Install]
+WantedBy=multi-user.target

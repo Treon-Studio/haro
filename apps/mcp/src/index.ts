@@ -14,6 +14,8 @@ import { getToolDefinitions, executeTool, type ToolServices } from './mcp/tools'
 import { MCP_ERROR_CODES } from './types/mcp';
 import type { SyncConfig, ChangedFile } from './types/github';
 import type { ToolCallResult } from './types/mcp';
+import { MemoryFabricService } from './services/memory-fabric-service';
+import { mintServiceToken } from './lib/service-token';
 
 export interface Env {
   OKF_KV: KVNamespace;
@@ -29,6 +31,8 @@ export interface Env {
   WEBHOOK_SECRET?: string;
   SYNC_TOKEN?: string;
   MCP_API_KEY?: string;
+  MEMORY_FABRIC_URL?: string;
+  SERVICE_JWT_SECRET?: string;
 }
 
 const app = new Hono<{ Bindings: Env }>();
@@ -39,7 +43,7 @@ app.use('/*', cors({
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
 
-function buildServices(c: { env: Env }) {
+function buildServices(c: { env: Env }): ToolServices {
   const store = new KvStore(c.env.OKF_KV);
   const docService = new DocService(store);
   const searchService = new SearchService(store);
@@ -52,7 +56,14 @@ function buildServices(c: { env: Env }) {
     token: c.env.GITHUB_TOKEN || '',
   };
   const syncService = new SyncService(store, syncConfig);
-  return { docService, searchService, graphService, syncService };
+  const secret = c.env.SERVICE_JWT_SECRET;
+  const memoryFabric = c.env.MEMORY_FABRIC_URL
+    ? new MemoryFabricService({
+        baseUrl: c.env.MEMORY_FABRIC_URL,
+        mintToken: secret ? (tenantSlug) => mintServiceToken(tenantSlug, secret) : undefined,
+      })
+    : undefined;
+  return { docService, searchService, graphService, syncService, memoryFabric };
 }
 
 app.get('/health', (c) => {

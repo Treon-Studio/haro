@@ -1,4 +1,4 @@
-name = "treon-mcp"
+name = "haro-mcp"
 main = "src/index.ts"
 compatibility_date = "2026-06-30"
 compatibility_flags = ["nodejs_compat"]
@@ -6,8 +6,8 @@ compatibility_flags = ["nodejs_compat"]
 # KV Namespaces
 [[kv_namespaces]]
 binding = "OKF_KV"
-id = ""
-preview_id = ""
+id = "1096d734cb224c8eb4588a2c9afc054a"
+preview_id = "1096d734cb224c8eb4588a2c9afc054a"
 
 # Durable Objects
 [[durable_objects.bindings]]
@@ -20,7 +20,7 @@ class_name = "SessionDurableObject"
 
 [[migrations]]
 tag = "v1"
-new_classes = ["GraphDurableObject", "SessionDurableObject"]
+new_sqlite_classes = ["GraphDurableObject", "SessionDurableObject"]
 
 # Environment Variables
 [vars]
@@ -30,13 +30,11 @@ GITHUB_BRANCH = "main"
 DOCS_PATH = "docs"
 MAX_CONTEXT_TOKENS = "8000"
 MAX_GRAPH_DEPTH = "3"
-MCP_API_KEY = ""
+MCP_API_KEY = "mcp-haro-2024"
 
 # Secrets (set via wrangler secret put)
 # GITHUB_TOKEN
 # WEBHOOK_SECRET
 # SYNC_TOKEN
 
-# Rate Limiting
-[limits]
-cpu_ms = 30000
+

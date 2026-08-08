@@ -102,17 +102,4 @@ export function getModel(modelId: string): Model | undefined {
   return MODELS.find((model) => model.id === modelId);
 }
 
-export function loadApiKey(providerId: string): string {
-  if (typeof window === 'undefined') return '';
-  return localStorage.getItem(`tenang:apiKey:${providerId}`) || '';
-}
-
-export function saveApiKey(providerId: string, key: string): void {
-  if (typeof window === 'undefined') return;
-  if (key) {
-    localStorage.setItem(`tenang:apiKey:${providerId}`, key);
-  } else {
-    localStorage.removeItem(`tenang:apiKey:${providerId}`);
-  }
-}
 

@@ -1,0 +1,11 @@
+; apps/memory-fabric/deploy/tenant-cleanup.timer
+[Unit]
+Description=Run tenant cleanup daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=3600
+
+[Install]
+WantedBy=multi-user.target
